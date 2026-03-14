@@ -173,14 +173,14 @@ export default function FeedPage() {
           </div>
 
           {/* Time & Radius Row */}
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             {/* time pills */}
-            <div className="flex flex-1 bg-gray-50 rounded-xl p-1 gap-1 border border-black/[0.03]">
+            <div className="flex bg-gray-50 rounded-xl p-1 gap-1 border border-black/[0.03]">
               {(['live', 'today', 'yesterday'] as const).map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setTimeFilter(filter)}
-                  className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 flex items-center justify-center gap-1.5 ${timeFilter === filter
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap ${timeFilter === filter
                       ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
                       : "text-gray-400 hover:text-gray-600"
                     }`}
@@ -198,7 +198,7 @@ export default function FeedPage() {
                   <button
                     key={r}
                     onClick={() => setRadius(r)}
-                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest transition-all duration-200 ${radius === r
+                    className={`flex-1 px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest transition-all duration-200 ${radius === r
                         ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
                         : "text-gray-400 hover:text-gray-600"
                       }`}

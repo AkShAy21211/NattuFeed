@@ -1,61 +1,62 @@
-# NattuFeed - Local Community Updates Hub
+# 🌴 NattuFeed: The Heartbeat of Your Neighborhood
 
-NattuFeed is a minimal, hyper-local community progressive web application (PWA) designed to foster real-time neighborhood updates. The platform focuses on providing high-utility local information—like traffic alerts, market prices, and public service announcements—wrapped in a highly polished, glassmorphism-inspired UI.
+NattuFeed is an **Extreme Premium Hyperlocal Platform** designed for the unique sociotechnical landscape of **Kerala**. It is not just an information repository; it is a community-driven "Local Operating System" that bridges information asymmetry and fosters local cohesion through real-time, trust-verified updates.
 
 ![NattuFeed Logo](public/logo.png)
 
-## Core Features
-- **Real-time Local Feed**: View anonymous and authenticated posts tailored to your community.
-- **Micro-Categorization**: Updates are explicitly categorized into high-value buckets: Traffic, Public Service, Fish/Market, and General.
-- **"Me Too" Verification System**: Instead of traditional likes, users boost post credibility through a community verification system.
-- **Spam Control**: Integrated reporting and flagging mechanism with auto-hide logic for community moderation.
-- **Gamified Karma**: Users earn "Karma" points for posting and verifying accurate information.
-- **PWA Ready**: Installable as a progressive web application on mobile devices for native-like access.
-- **Bilingual Interface**: Seamlessly switch between English and Malayalam.
-- **Supreme Admin Control**: Specific users have elevated privileges to moderate and delete community posts.
+## 🎯 The Goal
+To empower local wards by transforming passive information into **Community Intelligence**. NattuFeed addresses the "Kerala Model" challenges—from youth exodus and elderly isolation to market price spikes and private transit tracking—all wrapped in a state-of-the-art, glassmorphism-inspired UI.
 
-## User Experience & Design
-NattuFeed's architecture heavily emphasizes an **"Extreme Premium"** mobile-first user experience.
-- Heavy use of CSS backdrop filters and glassmorphism.
-- Micro-interactions (hover states, loaders, karma popups).
-- Curated color palette mapped to categories allowing rapid visual parsing of the feed.
+## 🚀 Key Pillars & Minute Details
 
-## Technology Stack
-- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) with custom glassmorphic utilities and animations
-- **Backend & Database**: [Firebase](https://firebase.google.com/) (Firestore & Authentication)
-- **Deployment**: [Firebase Hosting](https://firebase.google.com/docs/hosting) & Firebase Functions
+### 1. 📍 Precision Hyperlocal Feed
+- **Radius-Based Filtering**: Users can calibrate their world-view with **2km, 5km, or 10km** radius toggles using the Haversine formula.
+- **Location Intelligence**: Powered by `useLocation` hook with persistent state handling and location-denied fallback primitives.
+- **Smart Time Filters**:
+  - **🔴 Live**: A real-time pulse of the ward with an animated "Heartbeat" indicator.
+  - **✨ Today / 🕰️ Yesterday**: One-tap "Catch-Up" filters to see what happened while you were away.
+
+### 2. 🛡️ The "Me Too" Verification System
+- **Trust over Likes**: Traditional "Likes" are replaced by a **Verification System**. Users boost post credibility by confirming updates they personally witness.
+- **Community Moderation**: Auto-hide logic triggers for posts with multiple flags, preventing "WhatsApp-style" misinformation noise.
+- **Visual Evidence**: Native camera integration for high-resolution event/grievance reporting.
+
+### 3. 🏆 Gamified Karma Ecosystem
+- **Leaderboard Podium**: A unified, glassmorphic stage for top neighborhood contributors (Gold, Silver, Bronze) with rank-specific glows and animations.
+- **Karma Score**: Points earned for posting helpful updates and verifying others.
+- **Smart Rank Pining**: Personalized bottom bar showing exactly how many points you need to reach the Top 10.
+
+### 4. 🌍 Socio-Technical Inclusivity
+- **Full Malayalam/English Audit**: 100% translatable interface ensuring accessibility for the 21.8 lakh newly digitally literate users in Kerala.
+- **Contextual Categories**:
+  - **🚗 Traffic**: Crowdsourced private bus tracking and safety monitoring.
+  - **🏪 Market**: Real-time Fish/Rubber/Commodity price transparency.
+  - **💡 Utility**: Community-audited public service grievances.
+  - **🏥 Health**: Verified blood donation coordination and elderly assistance.
+
+### 5. 📱 PWA & Native Edge
+- **iOS/Android Polish**: Native Apple splash screens (40+ resolutions), safe-area utility handling for notches, and a custom guided "Install" flow for Safari.
+- **Offline Persistence**: Firestore local caching ensures the feed loads instantly, even in low-connectivity areas (KFON compatible).
+
+## 🛠️ Technology Stack
+- **Framework**: [Next.js 15+](https://nextjs.org/) (App Router, Turbopack)
+- **Styling**: Vanilla CSS + Glassmorphism-first design system
+- **Backend**: [Firebase](https://firebase.google.com/) (Firestore, Auth, Functions, Analytics)
 - **Icons**: [Lucide React](https://lucide.dev/)
+- **Architecture**: Decoupled fetching/filtering logic for high-performance scale.
 
-## Getting Started
-
-First, run the development server:
+## 🚀 Getting Started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📦 Project Structure
+- `src/app`: Optimized App Router paths (Leaderboard, Profile, Auth).
+- `src/components`: Premium UI primitives (`PostCard`, `QuickSetup`, `EditProfileModal`).
+- `src/context`: Language, Auth, and Toast providers.
+- `src/lib`: Haversine algorithms and Firebase orchestration.
 
-## Project Structure
-
-- `/src/app`: Next.js App Router routing logic and primary pages.
-- `/src/components`: UI components including the highly polished `PostCard` and `KarmaNotification`.
-- `/src/context`: React Context providers for global state (AuthContext, LanguageContext, GamificationContext).
-- `/src/lib`: Utility functions and Firebase initialization.
-
-## Firebase Deployment
-
-This project is fully integrated with Google Firebase and requires a configured `firebase.json` and `.firebaserc` file. 
-
-To deploy:
-```bash
-npm run build
-firebase deploy
-```
+---
+*Built for the people of Kerala. Connecting neighborhoods, one "Me Too" at a time.*

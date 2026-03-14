@@ -180,7 +180,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
                   <div>
                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">{t('wardStreetOptional')}</p>
                      <input
-                        type="text"
+                        type="number"
                         placeholder={t("wardStreetPlaceholder")}
                         value={ward}
                         onChange={(e) => setWard(e.target.value)}

@@ -177,7 +177,7 @@ const QuickSetup: React.FC<QuickSetupProps> = ({ forceShow = false }) => {
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 id="ward-input"
-                type="text"
+                type="number"
                 placeholder={t('wardPlaceholder')}
                 value={ward}
                 onChange={(e) => setWard(e.target.value)}

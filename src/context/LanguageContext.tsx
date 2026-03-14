@@ -32,6 +32,9 @@ const translations: Record<string, Record<Language, string>> = {
   whereAreYou: { en: "Where are you?", ml: "നിങ്ങൾ എവിടെയാണ്?" },
   needsLocation: { en: "Location permission is required to show relevant local updates.", ml: "പ്രസക്തമായ വാർത്തകൾ കാണുന്നതിന് ലൊക്കേഷൻ അനുമതി ആവശ്യമാണ്." },
   tryAgain: { en: "Try Again", ml: "വീണ്ടും ശ്രമിക്കുക" },
+  filterLive: { en: "Live", ml: "തത്സമയം" },
+  filterToday: { en: "Today", ml: "ഇന്ന്" },
+  filterYesterday: { en: "Yesterday", ml: "ഇന്നലെ" },
 
   // Auth / Login
   welcome: { en: "Welcome to NattuFeed", ml: "നട്ടുഫീഡിലേക്ക് സ്വാഗതം" },

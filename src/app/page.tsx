@@ -18,14 +18,17 @@ import { useLanguage } from "@/context/LanguageContext";
 
 const RADIUS_OPTIONS = [2, 5, 10] as const;
 type RadiusKm = (typeof RADIUS_OPTIONS)[number];
+type TimeFilter = 'live' | 'today' | 'yesterday';
 
 export default function FeedPage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [radius, setRadius] = useState<RadiusKm>(2);
   const [isGlobal, setIsGlobal] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('live');
 
   const { showToast } = useToast();
   const { t } = useLanguage();
@@ -44,12 +47,7 @@ export default function FeedPage() {
       (snapshot) => {
         setIsOffline(false);
         const allPosts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Post));
-
-        if (!isGlobal && lat !== null && lng !== null) {
-          setPosts(allPosts.filter(p => isWithinRadius(p.lat, p.lng, lat, lng, radius)));
-        } else {
-          setPosts(allPosts);
-        }
+        setPosts(allPosts);
         setLoading(false);
       },
       (error) => {
@@ -64,7 +62,38 @@ export default function FeedPage() {
     );
 
     return () => unsubscribe();
-  }, [lat, lng, radius, isGlobal, showToast]);
+  }, [showToast]);
+
+  // Handle filtering logic whenever dependencies change
+  useEffect(() => {
+    let result = posts;
+
+    // 1. Geography Filter
+    if (!isGlobal && lat !== null && lng !== null) {
+      result = result.filter(p => isWithinRadius(p.lat, p.lng, lat, lng, radius));
+    }
+
+    // 2. Time Filter
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (timeFilter === 'today') {
+      result = result.filter(p => {
+        const d = p.createdAt?.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+        return d >= today;
+      });
+    } else if (timeFilter === 'yesterday') {
+      result = result.filter(p => {
+        const d = p.createdAt?.toDate ? p.createdAt.toDate() : new Date(p.createdAt);
+        return d >= yesterday && d < today;
+      });
+    }
+    // 'live' shows everything newest first (already handled by orderBy)
+
+    setFilteredPosts(result);
+  }, [posts, lat, lng, radius, isGlobal, timeFilter]);
 
   /* ── Location denied ── */
   if (locationError && !isGlobal && lat === null) {
@@ -122,9 +151,9 @@ export default function FeedPage() {
                 <p className="text-[13px] font-black text-gray-900 leading-none truncate">{areaLabel}</p>
                 <p className="text-[9px] font-bold uppercase tracking-widest text-primary/50 mt-0.5">
                   {isGlobal ? t("viewingEverywhere") : t("localFeed")}
-                  {posts.length > 0 && (
+                  {filteredPosts.length > 0 && (
                     <span className="text-gray-400 font-bold">
-                      {" "}· {posts.length} {t("posts").toLowerCase()}
+                      {" "}· {filteredPosts.length} {t("posts").toLowerCase()}
                     </span>
                   )}
                 </p>
@@ -143,23 +172,43 @@ export default function FeedPage() {
             </button>
           </div>
 
-          {/* radius selector (only in local mode) */}
-          {!isGlobal && (
-            <div className="flex bg-gray-50 rounded-xl p-1 gap-1 border border-black/[0.03]">
-              {RADIUS_OPTIONS.map((r) => (
+          {/* Time & Radius Row */}
+          <div className="flex gap-2">
+            {/* time pills */}
+            <div className="flex flex-1 bg-gray-50 rounded-xl p-1 gap-1 border border-black/[0.03]">
+              {(['live', 'today', 'yesterday'] as const).map((filter) => (
                 <button
-                  key={r}
-                  onClick={() => setRadius(r)}
-                  className={`flex-1 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all duration-200 ${radius === r
+                  key={filter}
+                  onClick={() => setTimeFilter(filter)}
+                  className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 flex items-center justify-center gap-1.5 ${timeFilter === filter
                       ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
                       : "text-gray-400 hover:text-gray-600"
                     }`}
                 >
-                  {r} {t("km")}
+                  {filter === 'live' && <span className={`w-1.5 h-1.5 rounded-full ${timeFilter === 'live' ? 'bg-primary animate-pulse' : 'bg-gray-300'}`} />}
+                  {t(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}`)}
                 </button>
               ))}
             </div>
-          )}
+
+            {/* radius selector (only in local mode) */}
+            {!isGlobal && (
+              <div className="flex bg-gray-50 rounded-xl p-1 gap-1 border border-black/[0.03]">
+                {RADIUS_OPTIONS.map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRadius(r)}
+                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black tracking-widest transition-all duration-200 ${radius === r
+                        ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
+                        : "text-gray-400 hover:text-gray-600"
+                      }`}
+                  >
+                    {r}{t("km")}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -167,8 +216,8 @@ export default function FeedPage() {
       <div className="px-4 pt-2 space-y-3">
         <QuickSetup />
 
-        {posts.length > 0 ? (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+        {filteredPosts.length > 0 ? (
+          filteredPosts.map((post) => <PostCard key={post.id} post={post} />)
         ) : (
           /* ── Empty state ── */
           <div className="flex flex-col items-center text-center py-20 px-8">

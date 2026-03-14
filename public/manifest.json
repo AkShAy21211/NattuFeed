@@ -1,0 +1,36 @@
+{
+  "name": "NattuFeed",
+  "short_name": "NattuFeed",
+  "description": "Hyperlocal community feed for neighborhoods in Kerala.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F6F3",
+  "theme_color": "#1B4332",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Local Feed",
+      "url": "/",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Leaderboard",
+      "url": "/leaderboard",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

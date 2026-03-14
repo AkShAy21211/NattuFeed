@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper: Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper: Check if the user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && (
+        // Allow normal profile updates (no karma changes)
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['karmaTotal', 'karmaWeekly'])) ||
+        // OR allow exact +1 karma increments from verified interactions and post creations
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['karmaTotal', 'karmaWeekly']) &&
+          request.resource.data.karmaTotal == resource.data.karmaTotal + 1 &&
+          request.resource.data.karmaWeekly == resource.data.karmaWeekly + 1
+        )
+      );
+    }
+
+    // 2. Posts Collection
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAuthenticated() &&
+        request.resource.data.authorId == request.auth.uid &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.keys().hasAll(['authorId', 'lat', 'lng', 'headline', 'category', 'district', 'localBody', 'ward', 'verifiedCount', 'flagCount', 'isHidden', 'isBusinessPost', 'authorName', 'authorPhoto', 'landmark']);
+      
+      allow update: if isAuthenticated() &&
+        // Users can only update verifiedCount or flagCount (increments)
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(['verifiedCount', 'flagCount']) &&
+        // Ensure core identifiers and content remain unchanged
+        request.resource.data.authorId == resource.data.authorId &&
+        request.resource.data.headline == resource.data.headline;
+        
+      allow delete: if isAuthenticated() && 
+        (request.auth.uid == resource.data.authorId || request.auth.uid == 'PvfqPbqz1VMYEcQJeKAgYd5Thkc2');
+    }
+
+    // 3. Verifications Collection
+    match /verifications/{docId} {
+      allow read: if isAuthenticated();
+      // docId is {postId}_{userId}
+      allow write: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+
+    // 4. Flags Collection
+    match /flags/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+  }
+}

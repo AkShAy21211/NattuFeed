@@ -4,6 +4,7 @@ import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import FirebaseAnalytics from "@/components/FirebaseAnalytics";
+import ClarityAnalytics from "@/components/ClarityAnalytics";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -114,6 +115,7 @@ export default function RootLayout({
           {children}
           <Suspense fallback={null}>
             <FirebaseAnalytics />
+            <ClarityAnalytics />
           </Suspense>
         </LayoutWrapper>
       </body>

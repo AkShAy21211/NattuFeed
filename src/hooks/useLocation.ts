@@ -5,15 +5,18 @@ import { useState, useEffect } from "react";
 interface LocationState {
   lat: number | null;
   lng: number | null;
+  accuracy: number | null;
   error: string | null;
   loading: boolean;
+  isWithinKerala: boolean | null;
   refreshLocation: () => void;
 }
 
 export const useLocation = (): LocationState => {
-  const [location, setLocation] = useState<Omit<LocationState, 'refreshLocation'>>({
+  const [location, setLocation] = useState<Omit<LocationState, 'refreshLocation' | 'isWithinKerala'>>({
     lat: null,
     lng: null,
+    accuracy: null,
     error: null,
     loading: true,
   });
@@ -37,10 +40,11 @@ export const useLocation = (): LocationState => {
     };
 
     const handleSuccess = (position: GeolocationPosition) => {
-      const { latitude, longitude } = position.coords;
+      const { latitude, longitude, accuracy } = position.coords;
       const newState = {
         lat: latitude,
         lng: longitude,
+        accuracy: accuracy,
         error: null,
         loading: false,
       };
@@ -96,7 +100,8 @@ export const useLocation = (): LocationState => {
           ...prev,
           lat: parseFloat(cachedLat),
           lng: parseFloat(cachedLng),
-          loading: false, // Show feed immediately while updating in background
+          accuracy: 5000, // Assume low accuracy for cache
+          loading: false, 
         }));
       }
     } catch (e) {}
@@ -104,5 +109,12 @@ export const useLocation = (): LocationState => {
     getLocation();
   }, []);
 
-  return { ...location, refreshLocation: getLocation };
+  const isWithinKerala = (location.lat !== null && location.lng !== null)
+    ? (
+        location.lat >= 8.2  && location.lat <= 12.85 && 
+        location.lng >= 74.7 && location.lng <= 77.55
+      )
+    : false;
+
+  return { ...location, isWithinKerala, refreshLocation: getLocation };
 };

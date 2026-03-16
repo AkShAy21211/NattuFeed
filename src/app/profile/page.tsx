@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   MapPin, ChevronRight, User as UserIcon,
   Shield, Star, LogOut, Loader2, FileText,
-  Scale
+  Scale, AlertTriangle, Trash2
 } from "lucide-react";
 import {
   collection, query, where, orderBy,
@@ -17,6 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import EditProfileModal from "@/components/EditProfileModal";
 import PostCard from "@/components/PostCard";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 /* ─── level helpers ─────────────────────────────────────────────── */
 function getLevel(karmaTotal: number) {
@@ -62,11 +63,13 @@ function StatTile({ label, value, accent = false }: { label: string; value: stri
 
 /* ─── ProfilePage ───────────────────────────────────────────────── */
 export default function ProfilePage() {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut, deleteAccount } = useAuth();
   const { t } = useLanguage();
   const { showToast } = useToast();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
 
@@ -128,9 +131,67 @@ export default function ProfilePage() {
   const displayName = profile?.name ?? user?.displayName ?? t("nativeMember");
   const photoURL = profile?.photoURL ?? user?.photoURL;
 
+  const ageLabels: Record<string, string> = {
+    youth: t('ageYouth'),
+    youngAdult: t('ageYoungAdult'),
+    middleAge: t('ageMiddleAge'),
+    senior: t('ageSenior')
+  };
+  const userAgeLabel = profile?.ageGroup ? ageLabels[profile.ageGroup] : null;
+
   /* ─── render ─── */
   return (
     <div className="min-h-screen bg-[#F7F6F3] pb-28 animate-in fade-in duration-500">
+      
+      {/* ─── Delete Confirmation Overlay ─── */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[32px] w-full max-w-sm p-8 shadow-2xl border border-red-100 animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-100">
+              <AlertTriangle className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-black text-gray-900 text-center mb-3 leading-tight uppercase tracking-tight">
+              {t("deleteAccount") || "Delete Account?"}
+            </h3>
+            <p className="text-[11px] text-gray-400 font-bold text-center uppercase tracking-widest leading-relaxed mb-8">
+              {t("deleteAccountConfirm")}
+            </p>
+            
+            <div className="space-y-3">
+              <button
+                disabled={isDeleting}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    await deleteAccount();
+                    showToast(t("deleteAccountSuccess"), "success");
+                  } catch (err: any) {
+                    if (err.message === "REAUTH_NEEDED") {
+                      showToast(t("reauthRequired"), "warning");
+                    } else {
+                      showToast(t("deleteAccountFail"), "error");
+                    }
+                  } finally {
+                    setIsDeleting(false);
+                    setShowDeleteConfirm(false);
+                  }
+                }}
+                className="w-full py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("confirm")}
+              </button>
+              <button
+                disabled={isDeleting}
+                onClick={() => setShowDeleteConfirm(false)}
+                className="w-full py-4 bg-gray-50 text-gray-400 rounded-2xl font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all"
+              >
+                {t("cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-md mx-auto px-4 pt-6 space-y-4">
 
         {/* ════════ IDENTITY CARD ════════ */}
@@ -188,23 +249,49 @@ export default function ProfilePage() {
             <StatTile label={t("levelLabel")} value={`Lv. ${level}`} />
             <StatTile label={t("neighborhoodLabel")} value={profile?.localBody ?? t("notSet")} />
             <StatTile label={t("wardLabel")} value={profile?.ward ?? t("notAvailable")} />
+            {userAgeLabel && (
+              <div className="col-span-2">
+                <StatTile label={t("ageGroup")} value={userAgeLabel} />
+              </div>
+            )}
           </div>
         </div>
+
+        {/* ════════ COMMUNITY GUIDE BUTTON ════════ */}
+        <Link
+          href="/guide"
+          className="w-full flex items-center justify-between px-5 py-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:border-primary/20 hover:bg-primary/[0.02] transition-all active:scale-[0.98] group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/8 rounded-xl flex items-center justify-center border border-primary/10 group-hover:bg-primary/15 transition-colors shrink-0">
+              <FileText className="w-4 h-4 text-primary" />
+            </div>
+            <div className="text-left">
+              <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest leading-tight mb-0.5">
+                {t("guideTitle")}
+              </p>
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider opacity-60">
+                {t("guideSub")}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors shrink-0" />
+        </Link>
 
         {/* ════════ EDIT PROFILE BUTTON ════════ */}
         <button
           onClick={() => setIsEditModalOpen(true)}
-          className="w-full flex items-center justify-between px-5 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-primary/20 hover:bg-primary/[0.02] transition-all active:scale-[0.98] group"
+          className="w-full flex items-center justify-between px-5 py-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:border-primary/20 hover:bg-primary/[0.02] transition-all active:scale-[0.98] group"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary/8 rounded-xl flex items-center justify-center border border-primary/10 group-hover:bg-primary/15 transition-colors shrink-0">
               <UserIcon className="w-4 h-4 text-primary" />
             </div>
             <div className="text-left">
-              <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest leading-none mb-0.5">
+              <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest leading-tight mb-0.5">
                 {t("editProfile")}
               </p>
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider opacity-60">
                 {t("updateIdentity")}
               </p>
             </div>
@@ -213,7 +300,7 @@ export default function ProfilePage() {
         </button>
 
         <EditProfileModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} />
-
+        
         {/* ════════ MY POSTS ════════ */}
         <div className="pt-2">
           <div className="flex items-center gap-2.5 mb-4 px-1">
@@ -255,20 +342,25 @@ export default function ProfilePage() {
           )}
         </div>
 
+        {/* ════════ WHATSAPP FEEDBACK ════════ */}
+        <div className="pt-2">
+           <WhatsAppButton />
+        </div>
+
         {/* ════════ LEGAL LINKS ════════ */}
         <div className="grid grid-cols-2 gap-3 pt-2">
           <Link
             href="/privacy"
-            className="flex items-center justify-center gap-2 py-3 bg-white rounded-2xl border border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-primary hover:border-primary/20 transition-all"
+            className="flex items-center justify-center gap-2 py-4 bg-white rounded-xl border border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-[2px] hover:text-primary hover:border-primary/20 transition-all shadow-sm"
           >
-            <Shield className="w-3.5 h-3.5" />
+            <Shield className="w-4 h-4" />
             {t("privacyPolicyTitle")}
           </Link>
           <Link
             href="/terms"
-            className="flex items-center justify-center gap-2 py-3 bg-white rounded-2xl border border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-primary hover:border-primary/20 transition-all"
+            className="flex items-center justify-center gap-2 py-4 bg-white rounded-xl border border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-[2px] hover:text-primary hover:border-primary/20 transition-all shadow-sm"
           >
-            <Scale className="w-3.5 h-3.5" />
+            <Scale className="w-4 h-4" />
             {t("termsOfServiceTitle")}
           </Link>
         </div>
@@ -277,23 +369,43 @@ export default function ProfilePage() {
         <div className="pt-2 pb-4">
           <button
             onClick={signOut}
-            className="w-full flex items-center justify-between px-5 py-4 bg-white rounded-2xl border border-gray-100 hover:bg-red-50 hover:border-red-100 transition-all active:scale-[0.98] group shadow-sm"
+            className="w-full flex items-center justify-between px-5 py-4 bg-white rounded-xl border border-gray-100 hover:bg-red-50 hover:border-red-100 transition-all active:scale-[0.98] group shadow-sm"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-red-100 group-hover:border-red-100 transition-colors shrink-0">
                 <LogOut className="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors" />
               </div>
               <div className="text-left">
-                <p className="text-[11px] font-black text-gray-900 group-hover:text-red-600 uppercase tracking-widest leading-none mb-0.5 transition-colors">
+                <p className="text-[10px] font-black text-gray-900 group-hover:text-red-600 uppercase tracking-widest leading-tight mb-0.5 transition-colors">
                   {t("signOut")}
                 </p>
-                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider opacity-60">
                   {t("secureDisconnect")}
                 </p>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-red-300 transition-colors shrink-0" />
           </button>
+        </div>
+
+        {/* ════════ DELETE ACCOUNT ════════ */}
+        <div className="pt-2">
+           <button
+             onClick={() => setShowDeleteConfirm(true)}
+             className="w-full flex items-center gap-3 px-5 py-4 bg-white/50 rounded-xl border border-dashed border-gray-200 opacity-60 hover:opacity-100 hover:bg-red-50/30 hover:border-red-200 transition-all active:scale-[0.98] group"
+           >
+             <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-red-50 group-hover:border-red-100 transition-colors shrink-0">
+               <Trash2 className="w-4 h-4 text-gray-300 group-hover:text-red-400 transition-colors" />
+             </div>
+             <div className="text-left">
+               <p className="text-[10px] font-black text-gray-400 group-hover:text-red-500 uppercase tracking-widest leading-tight mb-0.5 transition-colors">
+                 {t("deleteAccount") || "Delete My Account"}
+               </p>
+               <p className="text-[9px] text-gray-300 font-bold uppercase tracking-wider opacity-60">
+                 {t("privacyRightsTitle")}
+               </p>
+             </div>
+           </button>
         </div>
 
         <p className="text-center text-[10px] font-bold text-gray-300 uppercase tracking-[0.5em] py-4">

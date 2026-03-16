@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Trophy, Crown, Star, Loader2, Zap } from 'lucide-react';
+import { Trophy, Crown, Star, Loader2, Zap, Share2 } from 'lucide-react';
 import {
   collection, query, orderBy, limit,
   onSnapshot, where, getCountFromServer, doc
@@ -9,6 +9,7 @@ import {
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { endOfWeek, differenceInDays } from 'date-fns';
 
 interface LeaderboardUser {
   id: string;
@@ -57,31 +58,78 @@ function Avatar({
 /* ─── main component ────────────────────────────────────────────── */
 
 export default function LeaderboardPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { t } = useLanguage();
 
   const [topUsers, setTopUsers] = useState<LeaderboardUser[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
   const [userWeeklyPoints, setUserWeeklyPoints] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isGlobalFallback, setIsGlobalFallback] = useState(false);
 
-  /* — listen to top 10 — */
+  /* — listen to top 10 (District-based with Global Fallback) — */
   useEffect(() => {
-    const topQuery = query(
+    const userDistrict = profile?.district || '';
+    
+    // We start by listening to the district-specific leaderboard
+    const districtQuery = query(
+      collection(db, 'users'),
+      where('district', '==', userDistrict),
+      orderBy('karmaWeekly', 'desc'),
+      orderBy('karmaTotal', 'desc'),
+      orderBy('createdAt', 'asc'),
+      limit(10),
+    );
+
+    const globalQuery = query(
       collection(db, 'users'),
       orderBy('karmaWeekly', 'desc'),
       orderBy('karmaTotal', 'desc'),
       orderBy('createdAt', 'asc'),
       limit(10),
     );
-    const unsub = onSnapshot(topQuery, (snap) => {
-      setTopUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardUser)));
-      setLoading(false);
-    });
-    return unsub;
-  }, []);
 
-  /* — compute current user's rank — */
+    let activeUnsub: (() => void) | null = null;
+
+    const startListening = () => {
+      // If no district, go straight to global
+      if (!userDistrict) {
+        activeUnsub = onSnapshot(globalQuery, (snap) => {
+          setTopUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardUser)));
+          setIsGlobalFallback(false); // It's not a fallback if they have no district
+          setLoading(false);
+        });
+        return;
+      }
+
+      // Try district first
+      activeUnsub = onSnapshot(districtQuery, (snap) => {
+        if (snap.empty) {
+          // If district is empty, we must fallback to global
+          // We need to unsubscribe from district and start global
+          if (activeUnsub) activeUnsub();
+          
+          activeUnsub = onSnapshot(globalQuery, (gSnap) => {
+            setTopUsers(gSnap.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardUser)));
+            setIsGlobalFallback(true);
+            setLoading(false);
+          });
+        } else {
+          setTopUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardUser)));
+          setIsGlobalFallback(false);
+          setLoading(false);
+        }
+      });
+    };
+
+    startListening();
+
+    return () => {
+      if (activeUnsub) activeUnsub();
+    };
+  }, [profile?.district]);
+
+  /* — compute current user's rank (District-based) — */
   useEffect(() => {
     if (!user) return;
     const unsub = onSnapshot(
@@ -91,22 +139,23 @@ export default function LeaderboardPage() {
         const data = snap.data();
         const pts = data.karmaWeekly || 0;
         const tot = data.karmaTotal || 0;
+        const dist = data.district || '';
         setUserWeeklyPoints(pts);
 
         try {
+          const baseQuery = query(collection(db, 'users'));
+          const filteredQuery = dist ? query(baseQuery, where('district', '==', dist)) : baseQuery;
+
           const [wSnap, tSnap, sSnap] = await Promise.all([
-            getCountFromServer(query(collection(db, 'users'), where('karmaWeekly', '>', pts))),
-            getCountFromServer(query(collection(db, 'users'), where('karmaWeekly', '==', pts), where('karmaTotal', '>', tot))),
-            getCountFromServer(query(collection(db, 'users'), where('karmaWeekly', '==', pts), where('karmaTotal', '==', tot), where('createdAt', '<', data.createdAt))),
+            getCountFromServer(query(filteredQuery, where('karmaWeekly', '>', pts))),
+            getCountFromServer(query(filteredQuery, where('karmaWeekly', '==', pts), where('karmaTotal', '>', tot))),
+            getCountFromServer(query(filteredQuery, where('karmaWeekly', '==', pts), where('karmaTotal', '==', tot), where('createdAt', '<', data.createdAt))),
           ]);
 
           setUserRank(wSnap.data().count + tSnap.data().count + sSnap.data().count + 1);
         } catch (err) {
           console.error("Failed to compute user rank:", err);
         }
-      },
-      (err) => {
-        console.error("Leaderboard user listener error:", err);
       }
     );
     return unsub;
@@ -119,15 +168,65 @@ export default function LeaderboardPage() {
 
   /**
    * Points needed to beat the user ranked one place above.
-   * Returns null when already #1 or when the user above can't be found.
    */
   const pointsToNext = (weeklyPts: number, rank: number): number | null => {
     if (rank <= 1) return null;
-    const targetIndex = Math.min(rank - 2, topUsers.length - 1);
+    
+    if (rank > 11) {
+      const targetUser = topUsers[topUsers.length - 1]; // #10
+      if (!targetUser) return null;
+      const diff = targetUser.karmaWeekly - weeklyPts;
+      return diff >= 0 ? diff + 1 : 1;
+    }
+
+    const targetIndex = rank - 2;
     const above = topUsers[targetIndex];
     if (!above) return null;
     const diff = above.karmaWeekly - weeklyPts;
-    return diff > 0 ? diff : 1;
+    return diff >= 0 ? diff + 1 : 1;
+  };
+
+  /** Calculation for progress bar */
+  const progressPercent = (): number => {
+    if (userRank === null || userRank <= 1) return 100;
+    
+    // Target user is the one we are chasing
+    const targetUser = userRank <= 11 
+      ? topUsers[userRank - 2] 
+      : topUsers[0]; // Chase #1 if far away
+      
+    if (!targetUser || targetUser.karmaWeekly === 0) return 0;
+    return Math.min(100, (userWeeklyPoints / targetUser.karmaWeekly) * 100);
+  };
+
+  /** Days until Monday reset */
+  const getDaysUntilReset = () => {
+    const now = new Date();
+    const nextMonday = endOfWeek(now, { weekStartsOn: 1 });
+    const diff = differenceInDays(nextMonday, now);
+    return diff;
+  };
+
+  /** Share/Invite handler */
+  const handleInvite = async () => {
+    const shareUrl = window.location.origin;
+    const text = t('shareText', { district: profile?.district || t('kerala'), url: shareUrl });
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'NattuFeed',
+          text: text,
+          url: shareUrl,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(`${text}`);
+      alert(t('linkCopied'));
+    }
   };
 
   /* ─── loading ─── */
@@ -143,11 +242,26 @@ export default function LeaderboardPage() {
   }
 
   /* ─── empty ─── */
-  if (!topUsers.length) {
+  if (topUsers.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-3 text-gray-400">
-        <Trophy className="w-10 h-10" />
-        <p className="text-sm font-black uppercase tracking-widest">{t('noRankingsYet')}</p>
+      <div className="flex flex-col items-center justify-center h-[70vh] px-8 text-center animate-in fade-in duration-500">
+        <div className="w-20 h-20 bg-amber-50 rounded-3xl flex items-center justify-center mb-6 border border-amber-100 shadow-lg shadow-amber-100/50">
+          <Trophy className="w-10 h-10 text-amber-400" />
+        </div>
+        <h3 className="text-xl font-black text-gray-900 mb-2">
+          {profile?.district 
+            ? t('noRankingsInDistrict', { district: profile.district }) 
+            : t('noRankingsYet')}
+        </h3>
+        <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-xs">
+          {t('claimSpotDesc')}
+        </p>
+        <button
+          onClick={() => window.location.href = '/'}
+          className="bg-primary text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[2px] shadow-lg shadow-primary/20 transition-all active:scale-95"
+        >
+          {t('startPosting')}
+        </button>
       </div>
     );
   }
@@ -157,22 +271,106 @@ export default function LeaderboardPage() {
     <div className="min-h-screen bg-[#F7F6F3] pb-36 animate-in fade-in duration-500">
 
       {/* ════════ HEADER + PODIUM ════════ */}
-      <div className="bg-white px-4 pt-10 pb-0 rounded-b-[2.5rem] shadow-sm overflow-hidden">
+      <div className="bg-white px-4 pt-10 pb-0 rounded-b-[2.5rem] shadow-sm overflow-hidden border-b border-gray-100">
 
         {/* title */}
-        <h1 className="text-center text-xl font-black text-gray-900 tracking-tight mb-8">
-          {t('topNattukarans')}
-        </h1>
+        <div className="text-center mb-6">
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex flex-col items-center justify-center gap-1 sm:gap-3 px-2">
+            <span className="leading-tight">{t('topNattukarans')}</span>
+            <span className="hidden sm:block text-primary/20">—</span>
+            <span className="text-primary leading-tight">
+              {profile?.district && !isGlobalFallback ? profile.district : t('allKerala')}
+            </span>
+          </h1>
+          <div className="flex flex-col items-center gap-3 mt-4">
+            <div className="flex flex-col items-center gap-2.5 w-full">
+              {/* Explicit Scope Badge */}
+              <div className={`px-4 py-1.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider border shadow-sm ${
+                isGlobalFallback || !profile?.district
+                  ? "bg-amber-50 border-amber-200 text-amber-600"
+                  : "bg-emerald-50 border-emerald-200 text-emerald-600"
+              }`}>
+                {isGlobalFallback || !profile?.district ? t('keralaLevel') : t('districtLevel', { district: profile?.district || '' })}
+              </div>
 
-        {/*
-          PODIUM LAYOUT
-          — rank-2 and rank-3 columns are shorter (no bottom padding)
-          — rank-1 sits on extra height via pb on its inner block
-          Container is flex items-end so cards naturally "stand on the stage"
-        */}
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center justify-center gap-2 bg-gray-50/50 px-3 py-1 rounded-full">
+                <Zap className="w-3 h-3 text-primary fill-primary/20" />
+                <span className="leading-relaxed">
+                  {t('weeklyRankings')} · {t('resetsInDays', { days: String(getDaysUntilReset()) })}
+                </span>
+              </p>
+            </div>
+
+            {isGlobalFallback && profile?.district && (
+              <span className="text-[9px] font-black text-primary/60 uppercase tracking-[0.15em] bg-primary/5 px-2 py-0.5 rounded-full">
+                {t('showingGlobal')}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Pioneer Card (Only when district is empty but user HAS a district) */}
+        {isGlobalFallback && profile?.district && (
+          <div className="max-w-xs mx-auto mb-8 bg-gradient-to-br from-primary/5 to-amber-50/30 border border-primary/10 rounded-3xl p-5 text-center shadow-sm relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Trophy className="w-12 h-12 text-primary" />
+             </div>
+             <h4 className="text-sm font-black text-gray-900 mb-1">{t('pioneerTitle')}</h4>
+             <p className="text-[11px] text-gray-500 leading-snug mb-4">
+                {t('pioneerDesc', { district: profile.district })}
+             </p>
+             <button
+               onClick={() => window.location.href = '/'}
+               className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md shadow-primary/20 active:scale-95 transition-all"
+             >
+                <Zap className="w-3.5 h-3.5 fill-white" />
+                {t('claimRank')}
+             </button>
+          </div>
+        )}
+
+        {/* Lonely Leader Card (Only when exactly 1 person is in local leaderboard) */}
+        {topUsers.length === 1 && !isGlobalFallback && (
+          <div className="max-w-xs mx-auto mb-8 bg-gradient-to-br from-emerald-50 to-white border border-emerald-200 rounded-3xl p-5 text-center shadow-sm relative overflow-hidden group">
+             <div className="absolute -top-2 -right-2 p-4 opacity-10 group-hover:opacity-20 transition-opacity rotate-12">
+                <Crown className="w-16 h-16 text-emerald-500" />
+             </div>
+             <h4 className="text-sm font-black text-emerald-900 mb-1">{t('lonelyLeaderTitle')}</h4>
+             <p className="text-[11px] text-emerald-800/60 leading-snug mb-4">
+                {t('lonelyLeaderDesc', { district: profile?.district || '' })}
+             </p>
+             <button
+               onClick={handleInvite}
+               className="inline-flex items-center gap-2 bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md shadow-emerald-200 active:scale-95 transition-all"
+             >
+                <Share2 className="w-3.5 h-3.5 fill-white" />
+                {t('inviteNeighbors')}
+             </button>
+          </div>
+        )}
+
+        {/* Profile Completion Card (Only when user HAS NO district) */}
+        {!profile?.district && (
+          <div className="max-w-xs mx-auto mb-8 bg-gradient-to-br from-amber-50 to-white border border-amber-200 rounded-3xl p-5 text-center shadow-sm relative overflow-hidden group">
+             <div className="absolute -top-2 -right-2 p-4 opacity-10 group-hover:opacity-20 transition-opacity rotate-12">
+                <Crown className="w-16 h-16 text-amber-500" />
+             </div>
+             <h4 className="text-sm font-black text-amber-900 mb-1">{t('unlockLocalRanking')}</h4>
+             <p className="text-[11px] text-amber-800/60 leading-snug mb-4">
+                {t('viewingKeralaDesc')}
+             </p>
+             <button
+               onClick={() => window.location.href = '/profile'}
+               className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md shadow-amber-200 active:scale-95 transition-all"
+             >
+                <Star className="w-3.5 h-3.5 fill-white" />
+                {t('setNeighborhood')}
+             </button>
+          </div>
+        )}
+
+        {/* PODIUM LAYOUT */}
         <div className="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-sm mx-auto">
-
-          {/* ── Rank 2 ── */}
           {second && (
             <PodiumCard
               user={second} rank={2} isMe={second.id === user?.uid}
@@ -180,7 +378,6 @@ export default function LeaderboardPage() {
             />
           )}
 
-          {/* ── Rank 1 (tallest) ── */}
           {first && (
             <PodiumCard
               user={first} rank={1} isMe={first.id === user?.uid}
@@ -188,7 +385,6 @@ export default function LeaderboardPage() {
             />
           )}
 
-          {/* ── Rank 3 ── */}
           {third && (
             <PodiumCard
               user={third} rank={3} isMe={third.id === user?.uid}
@@ -197,16 +393,16 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* podium stage bar */}
-        <div className="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-sm mx-auto mt-0">
-          {second && <div className="flex-1 h-6 bg-gray-100 rounded-t-xl" />}
-          {first && <div className="flex-1 h-10 bg-primary/10 rounded-t-xl" />}
-          {third && <div className="flex-1 h-4 bg-gray-100 rounded-t-xl" />}
+        {/* podium stage bar (Glassmorphic) */}
+        <div className="flex items-end justify-center gap-2 sm:gap-4 w-full max-w-sm mx-auto mt-0 relative z-10">
+          {second && <div className="flex-1 h-20 bg-slate-100/40 backdrop-blur-md border border-slate-200/50 border-b-0 rounded-t-2xl shadow-sm" />}
+          {first && <div className="flex-1 h-32 bg-amber-100/50 backdrop-blur-md border border-amber-200/50 border-b-0 rounded-t-2xl shadow-sm" />}
+          {third && <div className="flex-1 h-12 bg-orange-100/40 backdrop-blur-md border border-orange-200/50 border-b-0 rounded-t-2xl shadow-sm" />}
         </div>
       </div>
 
       {/* ════════ RANKS 4–10 LIST ════════ */}
-      <div className="px-4 max-w-lg mx-auto mt-6 space-y-2.5">
+      <div className="px-4 max-w-lg mx-auto mt-6 space-y-2.5 pb-2">
         {rest.map((item, i) => {
           const rankValue = i + 4;
           const isMe = item.id === user?.uid;
@@ -218,7 +414,7 @@ export default function LeaderboardPage() {
               className={`
                 flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300
                 ${isMe
-                  ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-[1.015]'
+                  ? 'bg-primary text-white shadow-xl shadow-primary/30 scale-[1.02] ring-4 ring-white'
                   : 'bg-white border border-gray-100 hover:shadow-md hover:border-primary/15'
                 }
               `}
@@ -245,14 +441,14 @@ export default function LeaderboardPage() {
                   </p>
                 ) : !isMe ? (
                   <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                    {t('neighborhoodHero')}
+                    {t(['titleLegend', 'titleHelping', 'titleMarketPro', 'titleNeighbor'][i % 4] as any)}
                   </p>
                 ) : null}
               </div>
 
               {/* score */}
               <div className="text-right shrink-0">
-                <p className={`text-base font-black leading-none ${isMe ? 'text-white' : 'text-primary'}`}>
+                <p className={`text-base font-black leading-tight ${isMe ? 'text-white' : 'text-primary'}`}>
                   {item.karmaWeekly}
                 </p>
                 <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isMe ? 'text-white/40' : 'text-gray-400'}`}>
@@ -285,24 +481,41 @@ export default function LeaderboardPage() {
 
             {/* ── info ── */}
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-white/40 mb-0.5">
-                {t('yourStand')}
-              </p>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-black text-gray-900 dark:text-white leading-tight">
-                  {userWeeklyPoints}
-                </span>
-                <span className="text-[11px] text-gray-400 dark:text-white/40 uppercase">
-                  {t('points')}
+              <div className="flex items-center gap-2 mb-0.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-primary/60">
+                  {!profile?.district 
+                    ? t('allKerala') 
+                    : isGlobalFallback ? profile.district : profile.district}
+                </p>
+                <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 uppercase">
+                  {isGlobalFallback || !profile?.district ? t('keralaLevel') : t('districtLevel', { district: profile?.district || '' })}
                 </span>
               </div>
-              {userRank > 1 && pointsToNext(userWeeklyPoints, userRank) && (
-                <p className="text-[11px] text-gray-500 dark:text-white/50 mt-0.5 truncate">
-                  <span className="font-black text-gray-800 dark:text-white">
-                    {pointsToNext(userWeeklyPoints, userRank)} pts
-                  </span>
-                  {' '}to reach #{userRank - 1}
-                </p>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black text-gray-900 dark:text-white leading-tight">
+                  {userRank === 1 && isGlobalFallback ? t('pioneerMode') : `${t('rank')} #${userRank}`}
+                </span>
+                <span className="text-[11px] font-bold text-gray-400 dark:text-white/40 uppercase ml-1">
+                  ({userWeeklyPoints} pts)
+                </span>
+              </div>
+              
+              {!profile?.district ? (
+                <button 
+                   onClick={() => window.location.href = '/profile'}
+                   className="text-[9px] font-black text-amber-600 uppercase tracking-widest mt-1 underline underline-offset-2"
+                >
+                  Set Neighborhood to claim Local #1
+                </button>
+              ) : (
+                userRank > 1 && pointsToNext(userWeeklyPoints, userRank) && (
+                  <p className="text-[10px] text-gray-500 dark:text-white/50 mt-0.5 truncate font-bold">
+                    <span className="text-primary">
+                      {pointsToNext(userWeeklyPoints, userRank)} pts
+                    </span>
+                    {' '}to reach #{userRank - 1}
+                  </p>
+                )
               )}
             </div>
 
@@ -320,12 +533,7 @@ export default function LeaderboardPage() {
                   <div
                     className="h-full bg-primary rounded-full transition-all duration-700"
                     style={{
-                      width: `${Math.min(
-                        100,
-                        userRank <= 11
-                          ? (userWeeklyPoints / (topUsers[userRank - 2]?.karmaWeekly || 1)) * 100
-                          : (userWeeklyPoints / (topUsers[0]?.karmaWeekly || 1)) * 100
-                      )}%`,
+                      width: `${progressPercent()}%`,
                     }}
                   />
                 </div>
@@ -371,7 +579,7 @@ function PodiumCard({ user, rank, isMe, extraBottom }: PodiumCardProps) {
 
       {/* crown for #1 */}
       {rank === 1 && (
-        <Crown className="w-8 h-8 text-amber-400 fill-amber-300 mb-2 drop-shadow animate-bounce [animation-duration:2.5s]" />
+        <Crown className="w-8 h-8 text-amber-400 fill-amber-300 mb-2 drop-shadow" />
       )}
 
       {/* avatar */}

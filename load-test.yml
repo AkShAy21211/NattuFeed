@@ -1,0 +1,25 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 60    # 60 seconds
+      arrivalRate: 5  # 5 new users per second
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 20
+      name: "Ramp up"
+    - duration: 60
+      arrivalRate: 50
+      name: "Peak load"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "User opens feed"
+    flow:
+      - get:
+          url: "/"
+      - think: 2
+      - get:
+          url: "/leaderboard"
+      - think: 1

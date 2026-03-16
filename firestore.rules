@@ -16,16 +16,9 @@ service cloud.firestore {
     // 1. Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && (
-        // Allow normal profile updates (no karma changes)
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['karmaTotal', 'karmaWeekly'])) ||
-        // OR allow exact +1 karma increments from verified interactions and post creations
-        (
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['karmaTotal', 'karmaWeekly']) &&
-          request.resource.data.karmaTotal == resource.data.karmaTotal + 1 &&
-          request.resource.data.karmaWeekly == resource.data.karmaWeekly + 1
-        )
+      allow create, update: if isOwner(userId) || (
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data != null ? resource.data : {}).affectedKeys().hasOnly(['karmaTotal', 'karmaWeekly'])
       );
     }
 
@@ -35,31 +28,42 @@ service cloud.firestore {
       
       allow create: if isAuthenticated() &&
         request.resource.data.authorId == request.auth.uid &&
-        request.resource.data.createdAt == request.time &&
-        request.resource.data.keys().hasAll(['authorId', 'lat', 'lng', 'headline', 'category', 'district', 'localBody', 'ward', 'verifiedCount', 'flagCount', 'isHidden', 'isBusinessPost', 'authorName', 'authorPhoto', 'landmark']);
+        request.resource.data.keys().hasAll(['authorId', 'lat', 'lng', 'headline', 'category']);
       
       allow update: if isAuthenticated() &&
-        // Users can only update verifiedCount or flagCount (increments)
-        request.resource.data.diff(resource.data).affectedKeys().hasAny(['verifiedCount', 'flagCount']) &&
-        // Ensure core identifiers and content remain unchanged
-        request.resource.data.authorId == resource.data.authorId &&
-        request.resource.data.headline == resource.data.headline;
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verifiedCount', 'flagCount', 'reactions', 'isHidden']) &&
+        resource.data.authorId == request.resource.data.authorId &&
+        (request.resource.data.isHidden == resource.data.isHidden || 
+         request.auth.uid == resource.data.authorId || 
+         request.auth.uid == 'PDSS7Le4eDZetKMw6fBaI5zDaer1');
         
       allow delete: if isAuthenticated() && 
-        (request.auth.uid == resource.data.authorId || request.auth.uid == 'PvfqPbqz1VMYEcQJeKAgYd5Thkc2');
+        (request.auth.uid == resource.data.authorId || request.auth.uid == 'PDSS7Le4eDZetKMw6fBaI5zDaer1');
     }
 
     // 3. Verifications Collection
     match /verifications/{docId} {
       allow read: if isAuthenticated();
       // docId is {postId}_{userId}
-      allow write: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
     }
 
     // 4. Flags Collection
     match /flags/{docId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+
+    // 5. Bus Anchors (Radar Stops)
+    match /bus_anchors/{anchorId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+        request.resource.data.verified == false &&
+        request.resource.data.suggestedBy == request.auth.uid;
+      // Updates and deletes are reserved for admins (manual verification)
+      allow update, delete: if isAuthenticated() && request.auth.uid == 'PDSS7Le4eDZetKMw6fBaI5zDaer1';
     }
   }
 }

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { LogIn, Phone, ArrowLeft, Loader2, User as UserIcon } from "lucide-react";
+import { LogIn, Phone, ArrowLeft, Loader2, User as UserIcon, MapPin, Bus, ShoppingBag, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/context/ToastContext";
 import { useLanguage } from "@/context/LanguageContext";
 import type { ConfirmationResult } from "firebase/auth";
@@ -20,8 +20,10 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [otp, setOtp] = useState("");
+  
+  // Toggle this to true to re-enable Phone OTP Authentication
+  const SHOW_PHONE_AUTH = false;
 
-  /* ── Google sign-in ── */
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
@@ -65,6 +67,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await confirmationResult.confirm(otp);
+      showToast(t("welcomeBack"), "success");
       // AuthContext handles redirect after successful confirmation
     } catch (err) {
       console.error("OTP verification failed:", err);
@@ -75,20 +78,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[85vh] px-6">
+    <div className="relative flex flex-col items-center justify-center min-h-[85vh] px-6 overflow-hidden">
+      
+      {/* ── Background Flares ── */}
+      <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-[80px]" />
+      <div className="absolute bottom-[20%] left-[-20%] w-80 h-80 bg-emerald-500/5 rounded-full blur-[100px]" />
 
       {/* ── Brand ── */}
-      <div className="text-center mb-10">
-        <img
-          src="/logo.png"
-          alt="NattuFeed Logo"
-          className="w-24 h-24 mx-auto mb-4 drop-shadow-lg"
-        />
-        <h1 className="text-3xl font-black text-primary tracking-tight">NattuFeed</h1>
-        <p className="text-sm text-gray-400 mt-1.5">{t("connecting")}</p>
+      <div className="relative text-center mb-10 z-10">
+        <div className="relative w-24 h-24 mx-auto mb-6">
+          <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-2xl animate-pulse" />
+          <img
+            src="/logo.png"
+            alt="NattuFeed Logo"
+            className="relative w-24 h-24 drop-shadow-2xl"
+          />
+        </div>
+        <h1 className="text-4xl font-black text-gray-900 tracking-tight leading-none">NattuFeed</h1>
+        <p className="text-sm font-bold text-primary tracking-[0.2em] uppercase mt-2 opacity-80">{t("connecting")}</p>
       </div>
 
-      <div className="w-full space-y-4">
+      <div className="relative w-full max-w-sm space-y-4 z-10">
 
         {/* ════════ STEP 1: Phone + Name ════════ */}
         {!otpMode ? (
@@ -97,72 +107,83 @@ export default function LoginPage() {
             <button
               onClick={handleGoogleSignIn}
               disabled={loading || googleLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-100 py-4 px-6 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+              className="w-full h-16 flex items-center justify-center gap-3 bg-white border border-gray-100 py-4 px-6 rounded-xl font-black text-gray-700 hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-gray-200/20 uppercase text-[11px] tracking-wider"
             >
               {googleLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
               ) : (
-                /*
-                 * FIX: was https://www.google.com/favicon.ico — that's a
-                 * 16×16 favicon, not the Google brand logo. Using the
-                 * official SVG logo instead.
-                 */
                 <GoogleLogo />
               )}
               {t("contGoogle")}
             </button>
 
-            <Divider />
-
-            {/* Phone + name form */}
-            <form onSubmit={handleOtpRequest} className="space-y-3">
-              {/* Name */}
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pr-3 border-r-2 border-gray-200 flex items-center">
-                  <UserIcon className="w-4 h-4 text-gray-400" />
+            {!SHOW_PHONE_AUTH && (
+              <div className="pt-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest text-center mb-6">{t("featureTitle")}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <FeatureItem icon={<Bus className="w-5 h-5" />} label={t("featureTraffic")} />
+                  <FeatureItem icon={<ShoppingBag className="w-5 h-5" />} label={t("featureMarket")} />
+                  <FeatureItem icon={<ShieldAlert className="w-5 h-5" />} label={t("featureAlerts")} />
+                  <FeatureItem icon={<CheckCircle2 className="w-5 h-5" />} label={t("featureTrust")} />
                 </div>
-                <input
-                  type="text"
-                  placeholder={t("fullNameLabel") || "Full Name"}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-gray-50 border-2 border-gray-100 py-4 pl-14 pr-6 rounded-2xl focus:border-primary outline-none transition-colors font-medium"
-                  required
-                />
               </div>
+            )}
 
-              {/* Phone */}
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pr-3 border-r-2 border-gray-200 flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-bold text-gray-600">+91</span>
-                </div>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder={t("phonePlaceholder") || "00000 00000"}
-                  maxLength={10}
-                  value={phoneNumber}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "");
-                    if (val.length <= 10) setPhoneNumber(val);
-                  }}
-                  className="w-full bg-gray-50 border-2 border-gray-100 py-4 pl-24 pr-6 rounded-2xl focus:border-primary outline-none transition-colors font-medium"
-                  required
-                />
-              </div>
+            {SHOW_PHONE_AUTH && (
+              <>
+                <Divider />
 
-              <button
-                type="submit"
-                disabled={loading || phoneNumber.length !== 10 || name.trim().length < 2}
-                className="w-full bg-primary text-white py-4 px-6 rounded-2xl font-bold hover:opacity-90 transition-all active:scale-95 disabled:opacity-50"
-              >
-                {loading
-                  ? <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                  : t("signInPhone")
-                }
-              </button>
-            </form>
+                {/* Phone + name form */}
+                <form onSubmit={handleOtpRequest} className="space-y-3">
+                  {/* Name */}
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 pr-3 border-r-2 border-gray-200 flex items-center">
+                      <UserIcon className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder={t("fullNameLabel") || "Full Name"}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full bg-white border-2 border-gray-100 py-4 pl-14 pr-6 rounded-2xl focus:border-primary outline-none transition-colors font-medium shadow-sm"
+                      required
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 pr-3 border-r-2 border-gray-200 flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm font-bold text-gray-600">+91</span>
+                    </div>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder={t("phonePlaceholder") || "00000 00000"}
+                      maxLength={10}
+                      value={phoneNumber}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        if (val.length <= 10) setPhoneNumber(val);
+                      }}
+                      className="w-full bg-white border-2 border-gray-100 py-4 pl-24 pr-6 rounded-2xl focus:border-primary outline-none transition-colors font-medium shadow-sm"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || phoneNumber.length !== 10 || name.trim().length < 2}
+                    className="w-full bg-primary text-white py-4 px-6 rounded-xl font-black uppercase tracking-[2px] hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 text-[11px] shadow-lg shadow-primary/20"
+                  >
+                    {loading
+                      ? <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                      : t("signInPhone")
+                    }
+                  </button>
+                </form>
+              </>
+            )}
           </>
 
         ) : (
@@ -185,12 +206,6 @@ export default function LoginPage() {
               <p className="text-sm text-gray-400 mt-1">{t("sentTo", { phoneNumber })}</p>
             </div>
 
-            {/*
-             * FIX: added maxLength={6} and inputMode="numeric" so mobile
-             * keyboards show a numpad and users can't paste a longer string.
-             * tracking-[0.5em] instead of [1em] — [1em] was pushing the
-             * last digit outside the input boundary on small screens.
-             */}
             <input
               type="text"
               inputMode="numeric"
@@ -198,14 +213,14 @@ export default function LoginPage() {
               maxLength={6}
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              className="w-full bg-gray-50 border-2 border-gray-100 py-5 px-6 text-center text-3xl font-black tracking-[0.5em] rounded-2xl focus:border-primary outline-none transition-colors"
+              className="w-full bg-white border-2 border-gray-100 py-5 px-6 text-center text-3xl font-black tracking-[0.5em] rounded-2xl focus:border-primary outline-none transition-colors shadow-sm"
               required
             />
 
             <button
               type="submit"
               disabled={loading || otp.length < 6}
-              className="w-full bg-primary text-white py-4 px-6 rounded-2xl font-bold hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-primary text-white py-4 px-6 rounded-xl font-black uppercase tracking-[2px] hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 text-[11px] shadow-lg shadow-primary/20"
             >
               {loading
                 ? <Loader2 className="w-5 h-5 animate-spin" />
@@ -219,7 +234,7 @@ export default function LoginPage() {
       {/* Required for Firebase Phone Auth reCAPTCHA — must stay in the DOM */}
       <div id="recaptcha-container" className="hidden" />
 
-      <p className="mt-10 text-center text-xs text-gray-400 max-w-[280px] leading-relaxed">
+      <p className="mt-12 text-center text-[10px] text-gray-400 max-w-[280px] leading-relaxed relative z-10 font-medium">
         {t("legalNote")}{" "}
         <Link href="/terms" className="text-primary font-bold hover:underline">{t("termsOfServiceTitle")}</Link> &{" "}
         <Link href="/privacy" className="text-primary font-bold hover:underline">{t("privacyPolicyTitle")}</Link>
@@ -229,6 +244,17 @@ export default function LoginPage() {
 }
 
 /* ─── Small sub-components ──────────────────────────────────────── */
+
+function FeatureItem({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="bg-white/40 backdrop-blur-sm border border-gray-100 p-4 rounded-[2rem] flex flex-col items-center text-center gap-2 transition-all hover:border-primary/20 hover:bg-white/60">
+      <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+        {icon}
+      </div>
+      <span className="text-[10px] font-black leading-tight text-gray-600 line-clamp-2">{label}</span>
+    </div>
+  );
+}
 
 function Divider() {
   const { t } = useLanguage();

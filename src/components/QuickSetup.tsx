@@ -3,23 +3,28 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { KERALA_DISTRICTS, KERALA_LSG_DATA, District } from "@/constants/keralaData";
-import { MapPin, Search, ChevronRight, CheckCircle2, X } from "lucide-react";
+import { MapPin, Search, ChevronRight, CheckCircle2, X, AlertTriangle, Star } from "lucide-react";
+import { useLocation } from "@/hooks/useLocation";
 
 import { useLanguage } from "@/context/LanguageContext";
+import { db } from "@/lib/firebase";
+import { doc, runTransaction, increment } from "firebase/firestore";
 
 interface QuickSetupProps {
   forceShow?: boolean;
 }
 
 const QuickSetup: React.FC<QuickSetupProps> = ({ forceShow = false }) => {
-  const { profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile } = useAuth();
   const { t, language } = useLanguage();
   const [step, setStep] = useState(1);
   const [district, setDistrict] = useState<District | "">(profile?.district as District || "");
   const [localBody, setLocalBody] = useState(profile?.localBody || "");
   const [ward, setWard] = useState(profile?.ward || "");
+  const [ageGroup, setAgeGroup] = useState(profile?.ageGroup || "");
   const [lsgSearch, setLsgSearch] = useState(profile?.localBody || "");
   const [isUpdating, setIsUpdating] = useState(false);
+  const { isWithinKerala, loading: locationLoading } = useLocation();
   
   const isEditing = profile?.onboarded && forceShow;
 
@@ -36,14 +41,35 @@ const QuickSetup: React.FC<QuickSetupProps> = ({ forceShow = false }) => {
   if (!profile || (profile.onboarded && !forceShow)) return null;
 
   const handleSave = async () => {
+    if (!profile || !user) return;
     setIsUpdating(true);
     try {
-      await updateProfile({
-        district,
-        localBody: localBody || lsgSearch, // Fallback to manual entry
-        ward,
-        onboarded: true,
-      });
+      const isNewlyComplete = district && (localBody || lsgSearch) && ward;
+      const shouldGrantBonus = isNewlyComplete && !profile.identityBonusReceived;
+
+      if (shouldGrantBonus) {
+        const userRef = doc(db, "users", user.uid);
+        await runTransaction(db, async (tx) => {
+          tx.update(userRef, {
+            karmaTotal: increment(10),
+            karmaWeekly: increment(10),
+            identityBonusReceived: true,
+            district,
+            localBody: localBody || lsgSearch,
+            ward,
+            ageGroup,
+            onboarded: true
+          });
+        });
+      } else {
+        await updateProfile({
+          district,
+          localBody: localBody || lsgSearch,
+          ward,
+          ageGroup,
+          onboarded: true,
+        });
+      }
     } catch (error) {
       console.error("Save Profile Error", error);
     } finally {
@@ -51,24 +77,12 @@ const QuickSetup: React.FC<QuickSetupProps> = ({ forceShow = false }) => {
     }
   };
 
-  const handleSkip = async () => {
-    await updateProfile({ onboarded: true });
-  };
-
   return (
     <section 
       aria-labelledby="setup-title"
       className="mb-6 bg-emerald-50 border border-emerald-100 rounded-3xl p-6 shadow-sm overflow-hidden relative"
     >
-      {!forceShow && (
-        <button 
-          onClick={handleSkip}
-          aria-label={t("skipSetup")}
-          className="absolute top-4 right-4 text-emerald-600 hover:text-emerald-800 transition-colors"
-        >
-          <X size={20} />
-        </button>
-      )}
+      {/* Remove Skip button to enforce Kerala-only onboarding */}
 
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
@@ -81,6 +95,12 @@ const QuickSetup: React.FC<QuickSetupProps> = ({ forceShow = false }) => {
           <p className="text-sm text-gray-600">
             {isEditing ? t('editLocationSub') : t('onboardingSub')}
           </p>
+          {!isEditing && (
+            <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-amber-600/80">
+              <Star size={10} className="fill-amber-400" />
+              {t('profileIdentityBonus')}
+            </div>
+          )}
         </div>
       </div>
 
@@ -120,6 +140,9 @@ const QuickSetup: React.FC<QuickSetupProps> = ({ forceShow = false }) => {
             >
               {t('backDistricts')}
             </button>
+            <p className="text-xs text-emerald-600/70 mb-3 italic">
+              {t('searchBodyNote')}
+            </p>
             <p className="text-sm font-medium text-emerald-800 mb-2">{t('searchBody')}</p>
             <div className="relative mb-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} aria-hidden="true" />
@@ -177,28 +200,82 @@ const QuickSetup: React.FC<QuickSetupProps> = ({ forceShow = false }) => {
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 id="ward-input"
-                type="number"
+                type="text"
                 placeholder={t('wardPlaceholder')}
                 value={ward}
                 onChange={(e) => setWard(e.target.value)}
                 className="flex-1 w-full px-4 py-3 bg-white border border-emerald-100 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none"
               />
-              <button
-                onClick={handleSave}
-                disabled={isUpdating}
-                className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
-              >
-                {isUpdating ? t('saving') : t('finish')}
-                <ChevronRight size={20} aria-hidden="true" />
-              </button>
+              
+              {isWithinKerala === false ? (
+                <div className="w-full sm:w-auto flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-3 rounded-2xl text-[11px] font-bold text-amber-700 animate-in shake duration-300">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  {t("keralaOnlyRequirement")}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setStep(4)}
+                  disabled={isWithinKerala === null}
+                  className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 disabled:opacity-50 transition-all flex justify-center items-center gap-2"
+                >
+                  {t('finish')}
+                  <ChevronRight size={20} aria-hidden="true" />
+                </button>
+              )}
             </div>
+          </div>
+        )}
+
+        {/* Step 4: Age Group (Optional) */}
+        {step === 4 && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+            <button 
+              onClick={() => setStep(3)}
+              className="text-xs text-emerald-600 font-medium mb-2 hover:underline"
+            >
+              {t('back')} {t('wardTitle')}
+            </button>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-medium text-emerald-800">{t('selectAgeTitle')}</p>
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">{t('optionalLabel')}</span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 mb-6">
+              {[
+                { id: 'youth', label: t('ageYouth') },
+                { id: 'youngAdult', label: t('ageYoungAdult') },
+                { id: 'middleAge', label: t('ageMiddleAge') },
+                { id: 'senior', label: t('ageSenior') }
+              ].map((age) => (
+                <button
+                  key={age.id}
+                  onClick={() => setAgeGroup(age.id)}
+                  className={`px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all border ${
+                    ageGroup === age.id 
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-100" 
+                      : "bg-white text-emerald-700 border-emerald-100 hover:bg-emerald-50"
+                  }`}
+                >
+                  {age.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={handleSave}
+              disabled={isUpdating}
+              className="w-full py-4 bg-emerald-600 text-white font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-lg shadow-emerald-100 flex justify-center items-center gap-2"
+            >
+              {isUpdating ? t('saving') : t('finish')}
+              <ChevronRight size={20} aria-hidden="true" />
+            </button>
           </div>
         )}
       </div>
 
       {/* Progress Indicator */}
-      <div role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3} className="flex gap-1 mt-6">
-        {[1, 2, 3].map((s) => (
+      <div role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={4} className="flex gap-1 mt-6">
+        {[1, 2, 3, 4].map((s) => (
           <div 
             key={s}
             aria-hidden="true"

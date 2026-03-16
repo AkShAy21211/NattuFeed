@@ -23,7 +23,7 @@ const TabBar = () => {
             pathname === '/' ? 'text-primary scale-110 fill-primary/10' : 'text-gray-400 group-hover:text-primary/70'
           }`} 
         />
-        <span className={`text-[10px] font-bold transition-all duration-300 ${
+        <span className={`text-[10px] font-bold leading-tight transition-all duration-300 ${
             pathname === '/' ? 'text-primary' : 'text-gray-400 group-hover:text-primary/70'
         }`}>
           {t('feed')}

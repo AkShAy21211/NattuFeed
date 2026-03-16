@@ -1,62 +1,67 @@
-# 🌴 NattuFeed: The Heartbeat of Your Neighborhood
+# 🌴 NattuFeed: The Digital Heartbeat of Kerala's Neighborhoods
 
-NattuFeed is an **Extreme Premium Hyperlocal Platform** designed for the unique sociotechnical landscape of **Kerala**. It is not just an information repository; it is a community-driven "Local Operating System" that bridges information asymmetry and fosters local cohesion through real-time, trust-verified updates.
+NattuFeed is an **Extreme Premium Hyperlocal Platform** crafted specifically for the unique social fabric of Kerala. It is a live, community-driven "Local Operating System" that transforms passive neighborhood observations into actionable **Community Intelligence**.
 
-![NattuFeed Logo](public/logo.png)
-
-## 🎯 The Goal
-To empower local wards by transforming passive information into **Community Intelligence**. NattuFeed addresses the "Kerala Model" challenges—from youth exodus and elderly isolation to market price spikes and private transit tracking—all wrapped in a state-of-the-art, glassmorphism-inspired UI.
-
-## 🚀 Key Pillars & Minute Details
-
-### 1. 📍 Precision Hyperlocal Feed
-- **Radius-Based Filtering**: Users can calibrate their world-view with **2km, 5km, or 10km** radius toggles using the Haversine formula.
-- **Location Intelligence**: Powered by `useLocation` hook with persistent state handling and location-denied fallback primitives.
-- **Smart Time Filters**:
-  - **🔴 Live**: A real-time pulse of the ward with an animated "Heartbeat" indicator.
-  - **✨ Today / 🕰️ Yesterday**: One-tap "Catch-Up" filters to see what happened while you were away.
-
-### 2. 🛡️ The "Me Too" Verification System
-- **Trust over Likes**: Traditional "Likes" are replaced by a **Verification System**. Users boost post credibility by confirming updates they personally witness.
-- **Community Moderation**: Auto-hide logic triggers for posts with multiple flags, preventing "WhatsApp-style" misinformation noise.
-- **Visual Evidence**: Native camera integration for high-resolution event/grievance reporting.
-
-### 3. 🏆 Gamified Karma Ecosystem
-- **Leaderboard Podium**: A unified, glassmorphic stage for top neighborhood contributors (Gold, Silver, Bronze) with rank-specific glows and animations.
-- **Karma Score**: Points earned for posting helpful updates and verifying others.
-- **Smart Rank Pining**: Personalized bottom bar showing exactly how many points you need to reach the Top 10.
-
-### 4. 🌍 Socio-Technical Inclusivity
-- **Full Malayalam/English Audit**: 100% translatable interface ensuring accessibility for the 21.8 lakh newly digitally literate users in Kerala.
-- **Contextual Categories**:
-  - **🚗 Traffic**: Crowdsourced private bus tracking and safety monitoring.
-  - **🏪 Market**: Real-time Fish/Rubber/Commodity price transparency.
-  - **💡 Utility**: Community-audited public service grievances.
-  - **🏥 Health**: Verified blood donation coordination and elderly assistance.
-
-### 5. 📱 PWA & Native Edge
-- **iOS/Android Polish**: Native Apple splash screens (40+ resolutions), safe-area utility handling for notches, and a custom guided "Install" flow for Safari.
-- **Offline Persistence**: Firestore local caching ensures the feed loads instantly, even in low-connectivity areas (KFON compatible).
-
-## 🛠️ Technology Stack
-- **Framework**: [Next.js 15+](https://nextjs.org/) (App Router, Turbopack)
-- **Styling**: Vanilla CSS + Glassmorphism-first design system
-- **Backend**: [Firebase](https://firebase.google.com/) (Firestore, Auth, Functions, Analytics)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Architecture**: Decoupled fetching/filtering logic for high-performance scale.
-
-## 🚀 Getting Started
-
-```bash
-npm install
-npm run dev
-```
-
-## 📦 Project Structure
-- `src/app`: Optimized App Router paths (Leaderboard, Profile, Auth).
-- `src/components`: Premium UI primitives (`PostCard`, `QuickSetup`, `EditProfileModal`).
-- `src/context`: Language, Auth, and Toast providers.
-- `src/lib`: Haversine algorithms and Firebase orchestration.
+By bridging information asymmetry—from tracking private buses in real-time to monitoring local market prices—NattuFeed empowers citizens to take ownership of their immediate surroundings.
 
 ---
-*Built for the people of Kerala. Connecting neighborhoods, one "Me Too" at a time.*
+
+## 🚀 Minute Feature Breakdown
+
+### 1. 📢 The Hyperlocal Pulse (The Feed)
+The Feed is a real-time stream of everything happening within your immediate vicinity.
+- **Precision Radius Toggling**: Calibrate your world-view instantly between **2km** (your street/ward), **5km** (your town/junction), and **10km** (your local region).
+- **Time-Sensitive Intelligence**: 
+    - **🔴 Live Pulse**: The default state showing the absolute freshest updates from the last few hours.
+    - **Yesterday & Today**: Quickly back-reference missed event cycles to understand neighborhood patterns.
+- **Categorized Awareness**: Seven specialized channels to filter the noise:
+    - **Traffic & Gridlock**: Real-time road status and blockade alerts.
+    - **Utility & Services**: Updates on power cuts, water supply schedules, and waste collection.
+    - **Market Transparency**: A crowd-sourced price-checker for fish, vegetables, and local commodities.
+    - **Services & Skills**: Finding a local electrician, plumber, or artisan nearby.
+    - **Health & Safety**: Blood donation requests and critical medical alerts.
+    - **Hyperlocal Alerts**: High-priority broadcasts for weather, stray dogs, or road closures.
+    - **TownTalk**: The cultural heart—hidden gems, local food spots, and community stories.
+
+### 2. 🚌 Virtual Bus Radar 2.0
+A revolutionary tool designed for the backbone of Kerala’s transit—the Private/Mofussil Bus system.
+- **Directional Anchors**: Posts are not just text; they are linked to verified **Physical Bus Stops**.
+- **Timing Statuses**: Neighbors report if a bus is **On Time**, **Delayed**, or **Just Missed**, providing much-needed psychological relief to commuters at the stop.
+- **The Radar Decay (20m Window)**: Bus spots use a specialized "Decaying Pulse" UI. Every radar post has a life-cycle of 20 minutes (the average time between stops), ensuring the map remains clean and "Live."
+- **GPS Accuracy Gate**: A 300-meter "Proof of Proximity" lock ensures that only people actually at the stop or on the road can report radar updates, preventing "fake tracking."
+
+### 3. 🛡️ The Trust & Verification Protocol (Me Too!)
+NattuFeed relies on crowd-verified truth rather than one-way broadcasting.
+- **"Me Too" Verification**: Every post features a high-visibility verification button. If two neighbors verify an update, it gains a "Community Verified" badge, boosting its visibility.
+- **Identity Tiers**: Active contributors who verify others' posts earn badges that signal their reliability to the neighborhood.
+- **Auto-Moderation**: A built-in "Flag" system ensures that misinformation or noise is hidden automatically if the community reaches a consensus (5+ flags).
+
+### 4. 🏆 The Leaderboard & Karma Ecosystem
+Gamification that rewards civic participation and helpfulness.
+- **The Podium Hierarchy**: A visual stage showcasing the Top 3 "Nattukarans" with rank-specific glows (Gold, Silver, Bronze).
+- **Dynamic Colored Bars**: User rankings are displayed with proportional, color-coded progress bars reflecting their "Karma" weight.
+- **Global Fallback & Pioneer Mode**: 
+    - In quiet districts, the leaderboard automatically shows **All Kerala** rankings to maintain momentum.
+    - New users are encouraged with **"Pioneer Cards"** to take the #1 spot and lead their local ward.
+- **Karma Calculation**:
+    - **+1 Point**: For sharing a general update.
+    - **+2 Points**: For a high-utility Bus Radar spot.
+    - **+1 Point**: For verifying a neighbor's post.
+
+### 5. 🐘 Cultural & Language Fidelity
+- **100% Bilingual Core**: Every label, hint, and button is professionally translated between English and **Malayalam**.
+- **Script Handling**: The UI is engineered to handle the vertical height of the Malayalam script without clipping accents (Vallarppu/Chillu) or breaking the glassmorphic layout.
+- **Terminology Accuracy**: Uses culturally resonant terms like "Nattukaran" and "Bus Spott" to ensure the app feels like it was built in Kerala, for Kerala.
+
+### 6. 🔒 Privacy by Design
+- **Coordinate Jittering ("Digital Fog")**: To prevent exact house-level pinpointing, the app adds a random **±20m offset** to every GPS coordinate before saving.
+- **Neighborhood Isolation**: Your precise address is never revealed. Only your District and Ward are used for ranking, keeping your private space secure while you help the community.
+
+---
+
+## 📂 Documentation & Engineering
+For the technical heart of the project, including the tech stack, security rules, and architecture diagrams, please refer to:
+👉 **[ARCHITECTURE.md](./ARCHITECTURE.md)**
+
+---
+*Built to connect, engineered to protect. NattuFeed is the heartbeat of the native.*

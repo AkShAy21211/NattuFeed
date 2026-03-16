@@ -10,6 +10,7 @@ import IOSInstallPrompt from "./IOSInstallPrompt";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import AuthGuard from "./AuthGuard";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -49,7 +50,9 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
             )}
             <Header />
             <main id="main-content" className="flex-1 overflow-y-auto bg-white">
-              {children}
+              <AuthGuard>
+                {children}
+              </AuthGuard>
             </main>
             {!isLoginPage && <TabBar />}
             <InstallPrompt />

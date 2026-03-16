@@ -4,6 +4,8 @@ import React, { useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { KERALA_DISTRICTS, KERALA_LSG_DATA, District } from "@/constants/keralaData";
 import { X, Save, Loader2, User, MapPin } from "lucide-react";
+import { db } from "@/lib/firebase";
+import { doc, runTransaction, increment } from "firebase/firestore";
 import { useToast } from "@/context/ToastContext";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -13,7 +15,7 @@ interface EditProfileModalProps {
 }
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) => {
-  const { profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile } = useAuth();
   const { showToast } = useToast();
   const { t } = useLanguage();
 
@@ -21,6 +23,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
   const [district, setDistrict] = useState<District | "">(profile?.district as District || "");
   const [localBody, setLocalBody] = useState(profile?.localBody || "");
   const [ward, setWard] = useState(profile?.ward || "");
+  const [ageGroup, setAgeGroup] = useState(profile?.ageGroup || "");
   const [lsgSearch, setLsgSearch] = useState("");
   
   const [isUpdating, setIsUpdating] = useState(false);
@@ -32,6 +35,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
       setDistrict(profile.district as District || "");
       setLocalBody(profile.localBody || "");
       setWard(profile.ward || "");
+      setAgeGroup(profile.ageGroup || "");
       setLsgSearch("");
     }
   }, [isOpen, profile]);
@@ -52,15 +56,38 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
       return;
     }
 
+    if (!user || !profile) return;
+
     setIsUpdating(true);
     try {
-      await updateProfile({
-        name: name.trim(),
-        district,
-        localBody,
-        ward,
-        onboarded: true
-      });
+      const isNewlyComplete = district && localBody && ward;
+      const shouldGrantBonus = isNewlyComplete && !profile.identityBonusReceived;
+
+      if (shouldGrantBonus) {
+        const userRef = doc(db, "users", user.uid);
+        await runTransaction(db, async (tx) => {
+          tx.update(userRef, {
+            name: name.trim(),
+            district,
+            localBody,
+            ward,
+            ageGroup,
+            onboarded: true,
+            identityBonusReceived: true,
+            karmaTotal: increment(10),
+            karmaWeekly: increment(10),
+          });
+        });
+      } else {
+        await updateProfile({
+          name: name.trim(),
+          district,
+          localBody,
+          ward,
+          ageGroup,
+          onboarded: true
+        });
+      }
       showToast(t('profileUpdated'), "success");
       onClose();
     } catch (error) {
@@ -83,7 +110,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
         className="bg-white w-full max-w-[440px] max-h-[85vh] sm:max-h-[80vh] overflow-y-auto rounded-3xl sm:rounded-[32px] shadow-2xl p-6 flex flex-col mx-4 mb-4 sm:mb-0 animate-in slide-in-from-bottom duration-300"
       >
         <div className="flex justify-between items-center mb-6 shrink-0">
-          <h2 className="text-xl font-black text-gray-900">{t('editLocationTitle')}</h2>
+          <h2 className="text-xl font-black text-gray-900">{t('editProfile')}</h2>
           <button 
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -117,6 +144,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
               <MapPin size={14} className="text-emerald-500" />
               {t('primaryLocation')}
             </label>
+            <p className="text-[10px] text-gray-400 font-medium italic leading-relaxed">
+              {t('locationTrustNote')}
+            </p>
 
             <div className="space-y-4">
               <div>
@@ -192,22 +222,54 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
             </div>
           </div>
 
+          <div className="h-px bg-gray-100 w-full" />
+
+          {/* Age Group Field */}
+          <div className="space-y-4">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+              <User size={14} className="text-blue-500" />
+              {t('ageGroup')} <span className="text-[10px] text-gray-300 normal-case font-medium">{t('optionalLabel')}</span>
+            </label>
+            
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'youth', label: t('ageYouth') },
+                { id: 'youngAdult', label: t('ageYoungAdult') },
+                { id: 'middleAge', label: t('ageMiddleAge') },
+                { id: 'senior', label: t('ageSenior') }
+              ].map((age) => (
+                <button
+                  key={age.id}
+                  type="button"
+                  onClick={() => setAgeGroup(age.id)}
+                  className={`px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
+                    ageGroup === age.id 
+                      ? "bg-blue-600 text-white border-blue-600 shadow-sm" 
+                      : "bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100"
+                  }`}
+                >
+                  {age.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex-1" />
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-3 pt-6 shrink-0 mt-auto">
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 shrink-0 mt-auto">
             <button
               type="button"
               onClick={onClose}
               disabled={isUpdating}
-              className="py-4 rounded-2xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all active:scale-95"
+              className="flex-1 py-3.5 rounded-2xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all active:scale-95 order-2 sm:order-1"
             >
               {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={isUpdating || !name.trim()}
-              className="flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-white bg-primary hover:bg-opacity-95 shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-white bg-primary hover:bg-opacity-95 shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 order-1 sm:order-2"
             >
               {isUpdating ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

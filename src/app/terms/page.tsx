@@ -84,6 +84,9 @@ export default function TermsPage() {
         t('termsLiability2'),
         t('termsLiability3'),
         t('termsLiability4'),
+        t('termsLiabilityTransit'),
+        t('termsLiabilityServices'),
+        t('termsLiabilitySafety'),
       ]
     },
   ];

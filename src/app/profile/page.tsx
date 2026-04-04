@@ -2,46 +2,73 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
-  MapPin, ChevronRight, User as UserIcon,
-  Shield, Star, LogOut, Loader2, FileText,
-  Scale, AlertTriangle, Trash2
+   Shield, Star, Loader2, FileText,
+  Users, ShieldCheck, CheckCircle2,
+  Settings, MapPin, ChevronRight, User as UserIcon,
+  LayoutGrid, List as ListIcon,
+  Pencil
 } from "lucide-react";
 import {
   collection, query, where, orderBy,
-  onSnapshot, limit,
+  onSnapshot, limit, doc, setDoc, writeBatch, increment
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import EditProfileModal from "@/components/EditProfileModal";
+import VerificationRequestModal, { ROLES } from "@/components/VerificationRequestModal";
 import PostCard from "@/components/PostCard";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 /* ─── level helpers ─────────────────────────────────────────────── */
+const ADMIN_UID = process.env.NEXT_PUBLIC_ADMIN_UID ?? "YIk8fYx3n9Uwj4ygF4tnwVGFS8p2";
+
 function getLevel(karmaTotal: number) {
-  return Math.floor(karmaTotal / 10) + 1;
+  return Math.floor(karmaTotal / 25) + 1;
 }
 
-/* ─── Avatar with onError fallback ─────────────────────────────── */
-function ProfileAvatar({ src, name }: { src?: string | null; name?: string | null }) {
-  const [errored, setErrored] = useState(false);
-  const initial = name?.trim()?.[0]?.toUpperCase() ?? "?";
+import ProfileAvatar from "@/components/ProfileAvatar";
 
+/* ─── Badge Config ──────────────────────────────────────────────── */
+const BADGE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
+  transit_hero: { 
+    label: "Transit Hero", 
+    icon: <ShieldCheck className="w-4 h-4" />, 
+    color: "text-[#D32F2F]", // KSRTC Red
+    bg: "bg-red-50 border-red-100" 
+  },
+  town_voice: { 
+    label: "Town Voice", 
+    icon: <Users className="w-4 h-4" />, 
+    color: "text-indigo-600", 
+    bg: "bg-indigo-50 border-indigo-100" 
+  },
+  first_settler: { 
+    label: "First Settler", 
+    icon: <Star className="w-4 h-4" />, 
+    color: "text-amber-600", 
+    bg: "bg-amber-50 border-amber-100" 
+  },
+  karma_guardian: { 
+    label: "Guardian", 
+    icon: <ShieldCheck className="w-4 h-4" />, 
+    color: "text-emerald-600", 
+    bg: "bg-emerald-50 border-emerald-100" 
+  },
+};
+
+function BadgeItem({ type }: { type: string }) {
+  const cfg = BADGE_CONFIG[type];
+  if (!cfg) return null;
   return (
-    <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border-4 border-white shadow-md flex items-center justify-center shrink-0">
-      {src && !errored ? (
-        <img
-          src={src} alt={name ?? "Profile"}
-          className="w-full h-full object-cover"
-          onError={() => setErrored(true)}
-        />
-      ) : name ? (
-        <span className="text-2xl font-black text-gray-400">{initial}</span>
-      ) : (
-        <UserIcon className="w-10 h-10 text-gray-300" />
-      )}
+    <div className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border ${cfg.bg} min-w-[80px] shrink-0 animate-in zoom-in-95 duration-300`}>
+      <div className={`${cfg.color}`}>{cfg.icon}</div>
+      <p className={`text-[8px] font-black uppercase tracking-tighter text-center ${cfg.color}`}>
+        {cfg.label}
+      </p>
     </div>
   );
 }
@@ -63,22 +90,19 @@ function StatTile({ label, value, accent = false }: { label: string; value: stri
 
 /* ─── ProfilePage ───────────────────────────────────────────────── */
 export default function ProfilePage() {
+  const router = useRouter();
   const { user, profile, loading, signOut, deleteAccount } = useAuth();
   const { t } = useLanguage();
   const { showToast } = useToast();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [verificationRequests, setVerificationRequests] = useState<any[]>([]);
+  const [isModerator, setIsModerator] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
-  /*
-   * BUG FIX: was getDocs (one-time fetch).
-   * PostCard deletes posts via its own internal handler — the list
-   * never reflected those deletions. Switching to onSnapshot means
-   * the list stays in sync with Firestore automatically.
-   */
   useEffect(() => {
     if (!user?.uid) return;
 
@@ -104,7 +128,64 @@ export default function ProfilePage() {
     return unsub;
   }, [user?.uid]);
 
-  /* ── loading ── */
+  // Moderation Queue Fetch
+  useEffect(() => {
+    if (!user || user.uid !== ADMIN_UID) {
+      setIsModerator(false);
+      return;
+    }
+    setIsModerator(true);
+
+    const q = query(
+      collection(db, "verification_requests"),
+      where("status", "==", "pending"),
+      orderBy("createdAt", "desc"),
+      limit(20)
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      setVerificationRequests(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return unsub;
+  }, [user]);
+
+
+  const handleApprove = async (reqId: string, userId: string, roleId: string) => {
+    try {
+      const userRef = doc(db, "users", userId);
+      const reqRef = doc(db, "verification_requests", reqId);
+
+      const roleCfg = ROLES.find(r => r.id === roleId);
+      const displayRole = roleCfg 
+        ? roleCfg.label.split("/")[0].trim() 
+        : roleId.charAt(0).toUpperCase() + roleId.slice(1);
+
+      const batch = writeBatch(db);
+      batch.update(userRef, {
+        isVerified: true,
+        karmaTotal: increment(50), 
+      });
+      batch.update(reqRef, { status: "approved" });
+
+      await batch.commit();
+      showToast("User verified successfully!", "success");
+    } catch (err) {
+      console.error("Approve error:", err);
+      showToast("Failed to approve", "error");
+    }
+  };
+
+  const handleReject = async (reqId: string) => {
+    try {
+      const reqRef = doc(db, "verification_requests", reqId);
+      await setDoc(reqRef, { status: "rejected" }, { merge: true });
+      showToast("Request rejected", "info");
+    } catch (err) {
+      console.error("Reject error:", err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] gap-3 text-gray-400">
@@ -114,7 +195,6 @@ export default function ProfilePage() {
     );
   }
 
-  /* ── derived values ── */
   const karmaTotal = profile?.karmaTotal ?? 0;
   const karmaWeekly = profile?.karmaWeekly ?? 0;
   const level = getLevel(karmaTotal);
@@ -131,6 +211,7 @@ export default function ProfilePage() {
   const displayName = profile?.name ?? user?.displayName ?? t("nativeMember");
   const photoURL = profile?.photoURL ?? user?.photoURL;
 
+
   const ageLabels: Record<string, string> = {
     youth: t('ageYouth'),
     youngAdult: t('ageYoungAdult'),
@@ -139,69 +220,35 @@ export default function ProfilePage() {
   };
   const userAgeLabel = profile?.ageGroup ? ageLabels[profile.ageGroup] : null;
 
-  /* ─── render ─── */
   return (
-    <div className="min-h-screen bg-[#F7F6F3] pb-28 animate-in fade-in duration-500">
-      
-      {/* ─── Delete Confirmation Overlay ─── */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[32px] w-full max-w-sm p-8 shadow-2xl border border-red-100 animate-in zoom-in-95 duration-300">
-            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-red-100">
-              <AlertTriangle className="w-8 h-8 text-red-500" />
-            </div>
-            <h3 className="text-xl font-black text-gray-900 text-center mb-3 leading-tight uppercase tracking-tight">
-              {t("deleteAccount") || "Delete Account?"}
-            </h3>
-            <p className="text-[11px] text-gray-400 font-bold text-center uppercase tracking-widest leading-relaxed mb-8">
-              {t("deleteAccountConfirm")}
-            </p>
-            
-            <div className="space-y-3">
-              <button
-                disabled={isDeleting}
-                onClick={async () => {
-                  setIsDeleting(true);
-                  try {
-                    await deleteAccount();
-                    showToast(t("deleteAccountSuccess"), "success");
-                  } catch (err: any) {
-                    if (err.message === "REAUTH_NEEDED") {
-                      showToast(t("reauthRequired"), "warning");
-                    } else {
-                      showToast(t("deleteAccountFail"), "error");
-                    }
-                  } finally {
-                    setIsDeleting(false);
-                    setShowDeleteConfirm(false);
-                  }
-                }}
-                className="w-full py-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("confirm")}
-              </button>
-              <button
-                disabled={isDeleting}
-                onClick={() => setShowDeleteConfirm(false)}
-                className="w-full py-4 bg-gray-50 text-gray-400 rounded-2xl font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all"
-              >
-                {t("cancel")}
-              </button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#F7F6F3] pb-28 animate-in fade-in duration-500 text-[#212121]">
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-4 flex items-center justify-between">
+        <h1 className="text-lg font-black text-gray-900 tracking-tight">
+          {t("profileTitle") || "My Dashboard"}
+        </h1>
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={() => setIsEditModalOpen(true)}
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-primary"
+            title={t("editProfile")}
+          >
+            <Pencil size={20} />
+          </button>
+          <button 
+            onClick={() => router.push('/settings')}
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-primary"
+            title={t("settingsTitle")}
+          >
+            <Settings size={20} />
+          </button>
         </div>
-      )}
+      </div>
 
-      <div className="max-w-md mx-auto px-4 pt-6 space-y-4">
-
-        {/* ════════ IDENTITY CARD ════════ */}
+      <div className="px-4 pt-6 space-y-6">
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-
-          {/* avatar + name row */}
           <div className="flex items-center gap-4 mb-6">
             <div className="relative">
-              <ProfileAvatar src={photoURL} name={displayName} />
-              {/* shield badge */}
+              <ProfileAvatar src={photoURL} name={displayName} size="xl" />
               <div className="absolute -bottom-1 -right-1 bg-accent text-white p-1.5 rounded-xl border-2 border-white shadow-sm">
                 <Shield className="w-3.5 h-3.5" />
               </div>
@@ -216,6 +263,13 @@ export default function ProfilePage() {
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
                   {t("levelLabel")} {level}
                 </span>
+
+                {profile?.isVerified && (
+                  <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 uppercase tracking-widest">
+                    <CheckCircle2 size={10} />
+                    {"Verified"}
+                  </span>
+                )}
               </div>
               {profile?.district && (
                 <div className="flex items-center gap-1 mt-1.5">
@@ -226,24 +280,17 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* ── Karma block ── */}
           <div className="bg-primary rounded-2xl px-6 py-5 flex items-center justify-between mb-4">
             <div>
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50 mb-1 flex items-center gap-1.5">
                 <Star className="w-3 h-3 fill-white/20" />
                 {t("totalKarma")}
               </p>
-              {/* 
-                DESIGN: was text-6xl — looks great on large screens
-                but on 320px devices it nudges other elements. text-5xl
-                is still impactful but safe across all widths.
-              */}
               <p className="text-5xl font-black text-white leading-none">{karmaTotal}</p>
             </div>
             <Star className="w-12 h-12 text-white/10 fill-white/10" />
           </div>
 
-          {/* ── Stats grid ── */}
           <div className="grid grid-cols-2 gap-3">
             <StatTile label={t("weeklyKarma")} value={`+${karmaWeekly}`} accent />
             <StatTile label={t("levelLabel")} value={`Lv. ${level}`} />
@@ -255,54 +302,24 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+
+          {/* ─── BADGES SECTION ─── */}
+          {(profile?.badges && profile.badges.length > 0) && (
+            <div className="mt-8">
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-3 px-1">
+                Karma Badges
+              </p>
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+                {profile.badges.map((badge: string) => (
+                  <BadgeItem key={badge} type={badge} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ════════ COMMUNITY GUIDE BUTTON ════════ */}
-        <Link
-          href="/guide"
-          className="w-full flex items-center justify-between px-5 py-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:border-primary/20 hover:bg-primary/[0.02] transition-all active:scale-[0.98] group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/8 rounded-xl flex items-center justify-center border border-primary/10 group-hover:bg-primary/15 transition-colors shrink-0">
-              <FileText className="w-4 h-4 text-primary" />
-            </div>
-            <div className="text-left">
-              <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest leading-tight mb-0.5">
-                {t("guideTitle")}
-              </p>
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider opacity-60">
-                {t("guideSub")}
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors shrink-0" />
-        </Link>
-
-        {/* ════════ EDIT PROFILE BUTTON ════════ */}
-        <button
-          onClick={() => setIsEditModalOpen(true)}
-          className="w-full flex items-center justify-between px-5 py-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:border-primary/20 hover:bg-primary/[0.02] transition-all active:scale-[0.98] group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/8 rounded-xl flex items-center justify-center border border-primary/10 group-hover:bg-primary/15 transition-colors shrink-0">
-              <UserIcon className="w-4 h-4 text-primary" />
-            </div>
-            <div className="text-left">
-              <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest leading-tight mb-0.5">
-                {t("editProfile")}
-              </p>
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider opacity-60">
-                {t("updateIdentity")}
-              </p>
-            </div>
-          </div>
-          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors shrink-0" />
-        </button>
-
-        <EditProfileModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} />
-        
-        {/* ════════ MY POSTS ════════ */}
-        <div className="pt-2">
+        {/* ─── ACTIVITY SECTION ─── */}
+        <div className="pt-8">
           <div className="flex items-center gap-2.5 mb-4 px-1">
             <div className="w-7 h-7 bg-gray-100 rounded-xl flex items-center justify-center border border-gray-100 shrink-0">
               <FileText className="w-3.5 h-3.5 text-gray-500" />
@@ -310,8 +327,23 @@ export default function ProfilePage() {
             <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.25em]">
               {t("myPostsTitle")}
             </h3>
+            <div className="ml-auto flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+              <button 
+                onClick={() => setViewMode("list")}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === "list" ? "bg-white text-primary shadow-sm" : "text-gray-400"}`}
+              >
+                <ListIcon size={14} />
+              </button>
+              <button 
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === "grid" ? "bg-white text-primary shadow-sm" : "text-gray-400"}`}
+              >
+                <LayoutGrid size={14} />
+              </button>
+            </div>
           </div>
 
+          <div className="max-h-[400px] overflow-y-auto scroll-smooth no-scrollbar">
           {loadingPosts ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-primary/30" />
@@ -329,89 +361,122 @@ export default function ProfilePage() {
               </p>
             </div>
           ) : (
-            /*
-             * NOTE: PostCard handles its own delete via Firestore.
-             * Since we now use onSnapshot above, deleted posts will
-             * automatically disappear from this list — no extra prop needed.
-             */
-            <div className="space-y-3">
-              {myPosts.map((post: any) => (
-                <PostCard key={post.id} post={post} />
-              ))}
+            <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3 pb-4" : "space-y-3"}>
+              {myPosts.map((post: any) => {
+                const isSpecialized = ["Health", "Services", "Utility"].includes(post.category);
+                const isUnresolved = !post.isResolved;
+                const shouldHighlight = isSpecialized && isUnresolved;
+
+                if (viewMode === "grid") {
+                  return (
+                    <Link 
+                      key={post.id} 
+                      href={`/post/${post.id}`}
+                      className={`
+                        relative aspect-square bg-white rounded-3xl p-4 border transition-all active:scale-95
+                        ${shouldHighlight ? "border-primary shadow-md shadow-primary/10 ring-1 ring-primary/20" : "border-gray-100 shadow-sm"}
+                      `}
+                    >
+                      <div className="flex flex-col h-full justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                             <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border shrink-0 bg-gray-50 text-gray-400`}>
+                              {t(`category${post.category}`)}
+                            </span>
+                            {shouldHighlight && <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-sm shadow-primary/40" />}
+                          </div>
+                          <h4 className="text-xs font-black text-gray-900 line-clamp-3 leading-tight tracking-tight uppercase">
+                            {post.headline}
+                          </h4>
+                        </div>
+                        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50">
+                           <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                            {post.isResolved ? "Resolved" : "Active"}
+                          </span>
+                           <ChevronRight size={10} className="text-gray-300" />
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div key={post.id} className={shouldHighlight ? "ring-2 ring-primary/20 rounded-[24px] overflow-hidden" : ""}>
+                    <PostCard post={post} />
+                  </div>
+                );
+              })}
             </div>
           )}
+          </div>
         </div>
 
-        {/* ════════ WHATSAPP FEEDBACK ════════ */}
-        <div className="pt-2">
-           <WhatsAppButton />
-        </div>
-
-        {/* ════════ LEGAL LINKS ════════ */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <Link
-            href="/privacy"
-            className="flex items-center justify-center gap-2 py-4 bg-white rounded-xl border border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-[2px] hover:text-primary hover:border-primary/20 transition-all shadow-sm"
-          >
-            <Shield className="w-4 h-4" />
-            {t("privacyPolicyTitle")}
-          </Link>
-          <Link
-            href="/terms"
-            className="flex items-center justify-center gap-2 py-4 bg-white rounded-xl border border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-[2px] hover:text-primary hover:border-primary/20 transition-all shadow-sm"
-          >
-            <Scale className="w-4 h-4" />
-            {t("termsOfServiceTitle")}
-          </Link>
-        </div>
-
-        {/* ════════ SIGN OUT ════════ */}
-        <div className="pt-2 pb-4">
-          <button
-            onClick={signOut}
-            className="w-full flex items-center justify-between px-5 py-4 bg-white rounded-xl border border-gray-100 hover:bg-red-50 hover:border-red-100 transition-all active:scale-[0.98] group shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-red-100 group-hover:border-red-100 transition-colors shrink-0">
-                <LogOut className="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors" />
-              </div>
-              <div className="text-left">
-                <p className="text-[10px] font-black text-gray-900 group-hover:text-red-600 uppercase tracking-widest leading-tight mb-0.5 transition-colors">
-                  {t("signOut")}
-                </p>
-                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider opacity-60">
-                  {t("secureDisconnect")}
-                </p>
-              </div>
+        {/* ════════ MODERATION QUEUE (ADMINS ONLY) ════════ */}
+        {isModerator && (
+          <div className="pt-8 space-y-4">
+            <div className="flex items-center gap-2 px-1">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Moderation Queue</h3>
+              <span className="ml-auto text-[10px] font-black text-white bg-red-500 px-2 py-0.5 rounded-full">
+                {verificationRequests.length}
+              </span>
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-red-300 transition-colors shrink-0" />
-          </button>
-        </div>
 
-        {/* ════════ DELETE ACCOUNT ════════ */}
-        <div className="pt-2">
-           <button
-             onClick={() => setShowDeleteConfirm(true)}
-             className="w-full flex items-center gap-3 px-5 py-4 bg-white/50 rounded-xl border border-dashed border-gray-200 opacity-60 hover:opacity-100 hover:bg-red-50/30 hover:border-red-200 transition-all active:scale-[0.98] group"
-           >
-             <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-red-50 group-hover:border-red-100 transition-colors shrink-0">
-               <Trash2 className="w-4 h-4 text-gray-300 group-hover:text-red-400 transition-colors" />
-             </div>
-             <div className="text-left">
-               <p className="text-[10px] font-black text-gray-400 group-hover:text-red-500 uppercase tracking-widest leading-tight mb-0.5 transition-colors">
-                 {t("deleteAccount") || "Delete My Account"}
-               </p>
-               <p className="text-[9px] text-gray-300 font-bold uppercase tracking-wider opacity-60">
-                 {t("privacyRightsTitle")}
-               </p>
-             </div>
-           </button>
-        </div>
+            {verificationRequests.length === 0 ? (
+              <div className="p-8 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No pending requests</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {verificationRequests.map((req) => (
+                  <div key={req.id} className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-black text-gray-900 uppercase">{req.userName}</p>
+                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-tighter">{req.role}</p>
+                      </div>
+                      <time className="text-[8px] font-bold text-gray-400">
+                        {req.createdAt?.toDate ? req.createdAt.toDate().toLocaleDateString() : ""}
+                      </time>
+                    </div>
+                    <div className="space-y-1.5 min-h-0 bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Registration / Proof</p>
+                      <p className="text-[10px] text-gray-800 font-bold leading-relaxed">
+                        {req.proofDetails || "No ID provided"}
+                      </p>
+                      <hr className="border-gray-200 my-1.5 opacity-50" />
+                      <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Community Bio</p>
+                      <p className="text-[10px] text-gray-500 font-medium italic leading-relaxed">
+                        "{req.description}"
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleApprove(req.id, req.userId, req.role)}
+                        className="flex-1 py-2.5 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleReject(req.id)}
+                        className="flex-1 py-2.5 bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-50 hover:text-red-500 transition-all active:scale-95"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-        <p className="text-center text-[10px] font-bold text-gray-300 uppercase tracking-[0.5em] py-4">
+        <p className="text-center text-[10px] font-bold text-gray-300 uppercase tracking-[0.5em] py-16">
           {t("guardianTitle")}
         </p>
 
+        <VerificationRequestModal isOpen={isVerifyModalOpen} onClose={() => setIsVerifyModalOpen(false)} />
+        <EditProfileModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} />
       </div>
     </div>
   );

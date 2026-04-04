@@ -1,0 +1,296 @@
+[
+  {
+    "id": "kannur_thavakkara_new",
+    "name": "Thavakkara New Bus Terminal",
+    "lat": 11.8669,
+    "lng": 75.3714,
+    "description": "Kerala's largest private bus terminal and the primary hub for long-distance and interstate travel.",
+    "routes": ["Kozhikode", "Kochi", "Mangalore", "Mysuru", "Bengaluru", "Kasargod", "Iritty"]
+  },
+  {
+    "id": "kannur_ksrtc_caltex",
+    "name": "KSRTC Bus Depot (Caltex)",
+    "lat": 11.8752,
+    "lng": 75.3743,
+    "description": "Main depot for state-run KSRTC buses located on NH-66.",
+    "routes": ["Thiruvananthapuram", "Ernakulam", "Coimbatore", "Shoranur", "Payyanur"]
+  },
+  {
+    "id": "kannur_old_private_stand",
+    "name": "Old Private Bus Stand",
+    "lat": 11.8760,
+    "lng": 75.3659,
+    "description": "Historical terminal located near the Jawaharlal Nehru Stadium, now primarily handling local routes.",
+    "routes": ["Pazhayangadi", "Thaliparamba", "Local City Circulars"]
+  },
+  {
+    "id": "kannur_hospital_city_stand",
+    "name": "City Bus Stand (District HQ Hospital)",
+    "lat": 11.8620,
+    "lng": 75.3714,
+    "description": "Major stop for city-specific buses located near the government hospital.",
+    "routes": ["City Center", "Civil Station", "Munderi", "Kappad"]
+  },
+  {
+    "id": "kannur_caltex_junction",
+    "name": "Caltex Junction",
+    "lat": 11.8754,
+    "lng": 75.3740,
+    "description": "A critical intersection on NH-66 connecting the KSRTC depot to the northern suburbs.",
+    "routes": ["Taliparamba", "Payyannur", "HQ Hospital", "Valapattanam"]
+  },
+  {
+    "id": "kannur_talap_junction",
+    "name": "Talap Junction",
+    "lat": 11.8820,
+    "lng": 75.3650,
+    "description": "Key crossing for traffic moving toward the coastal and residential zones.",
+    "routes": ["Azheekode", "Pallikkunnu", "Puzhathi", "Caltex"]
+  },
+  {
+    "id": "kannur_thazhe_chovva",
+    "name": "Thazhe Chovva Junction",
+    "lat": 11.8540,
+    "lng": 75.3940,
+    "description": "A major transit point on the southern side of the city leading to Mattannur and the Airport.",
+    "routes": ["Kannur Airport", "Mattannur", "Koothuparamba", "Thalassery"]
+  },
+  {
+    "id": "vankulathvayal_market",
+    "name": "Vankulathvayal Market Bus Stop",
+    "lat": 11.9205127,
+    "lng": 75.3349659,
+    "routes": ["Kannur Town", "Meenkunnu", "Azhikkal"]
+  },
+  {
+    "id": "vankulathvayal_maruthi",
+    "name": "Vankulathvayal Bus Stop (Maruthi School)",
+    "lat": 11.922345,
+    "lng": 75.334172,
+    "routes": ["Kannur Town"]
+  },
+  {
+    "id": "vankulathvayal_higher_secondary",
+    "name": "Vankulathvayal Bus Stop (School Side)",
+    "lat": 11.919138,
+    "lng": 75.336017,
+    "routes": ["Kannur Town", "Meenkunnu"]
+  },
+  {
+    "id": "vankulathvayal_azheekal",
+    "name": "Vankulathvayal Bus Stop (to Azheekal)",
+    "lat": 11.918947,
+    "lng": 75.336017,
+    "routes": ["Azheekal", "Puthiyatheru", "Kannur Town"]
+  },
+  {
+    "id": "azhikode_health_centre",
+    "name": "Health Centre Bus Stop",
+    "lat": 11.918785,
+    "lng": 75.333797,
+    "routes": ["Kannur Town", "Azhikode", "Meenkunnu"]
+  },
+  {
+    "id": "vayiparamba",
+    "name": "Vayiparamba Bus Stop",
+    "lat": 11.9182531,
+    "lng": 75.324501,
+    "routes": ["Kannur Town", "Azhikode"]
+  },
+  {
+    "id": "azhikode_village_office",
+    "name": "Village Office Bus Stop",
+    "lat": 11.916543,
+    "lng": 75.337772,
+    "routes": ["Kannur Town", "Azhikode South"]
+  },
+  {
+    "id": "thekkanmar_kandi",
+    "name": "Thekkanmar Kandi Bus Stop",
+    "lat": 11.9146104,
+    "lng": 75.3401667,
+    "routes": ["Kannur Town", "Azhikode"]
+  },
+  {
+    "id": "kadappuram_road",
+    "name": "Kadappuram Road Bus Stop",
+    "lat": 11.9076346,
+    "lng": 75.3432244,
+    "routes": ["Kannur Town", "Azhikode", "Alavil"]
+  },
+  {
+    "id": "puthiyaparambu_kallu_shop",
+    "name": "Puthiyaparambu Kallu Shop Bus Stop",
+    "lat": 11.9059392,
+    "lng": 75.3505468,
+    "routes": ["Kannur Town", "Azhikode", "Alavil"]
+  },
+  {
+    "id": "poothappara_south",
+    "name": "Poothappara South Bus Stop",
+    "lat": 11.907611,
+    "lng": 75.3432183,
+    "routes": ["Kannur Town", "Chirakkal", "Azhikode South"]
+  },
+  {
+    "id": "azhikode_medical_centre",
+    "name": "Health Mall Bus Stop",
+    "lat": 11.9066517,
+    "lng": 75.3439061,
+    "routes": ["Kannur Town", "Azhikode", "Chirakkal"]
+  },
+  {
+    "id": "colony_gate",
+    "name": "Colony Gate Bus Stop",
+    "lat": 11.9038786,
+    "lng": 75.3449863,
+    "routes": ["Kannur Town", "Azhikode", "Alavil"]
+  },
+  {
+    "id": "kalladathodu",
+    "name": "Kalladathodu Bus Stop",
+    "lat": 11.9014007,
+    "lng": 75.3469696,
+    "routes": ["Kannur Town", "Alavil Junction"]
+  },
+  {
+    "id": "alavil_junction",
+    "name": "Alavil Junction Bus Stop",
+    "lat": 11.8987365,
+    "lng": 75.3492134,
+    "routes": ["Kannur Town", "Azhikode", "Chalad", "Manal"]
+  },
+  {
+    "id": "mahatma_road",
+    "name": "Mahatma Road Bus Stop",
+    "lat": 11.896786,
+    "lng": 75.349588,
+    "routes": ["Kannur Town", "Alavil", "Chalad"]
+  },
+  {
+    "id": "otta_thengu",
+    "name": "Otta Thengu Bus Stop",
+    "lat": 11.8928058,
+    "lng": 75.350748,
+    "routes": ["Kannur Town", "Alavil", "Chalad"]
+  },
+  {
+    "id": "manal",
+    "name": "Manal Bus Stop",
+    "lat": 11.8899701,
+    "lng": 75.3511483,
+    "routes": ["Kannur Town", "Alavil", "Chalad"]
+  },
+  {
+    "id": "chalad_juma_masjid",
+    "name": "Chalad Juma Masjid Bus Stop",
+    "lat": 11.8826839,
+    "lng": 75.3532887,
+    "routes": ["Kannur Town", "Chalad", "Alavil"]
+  },
+  {
+    "id": "ambalam_road",
+    "name": "Ambalam Road Bus Stop",
+    "lat": 11.8851415,
+    "lng": 75.3523902,
+    "routes": ["Kannur Town", "Chalad", "Alavil"]
+  },
+  {
+    "id": "padanna_paalam",
+    "name": "Padanna Paalam Bus Stop",
+    "lat": 11.8768824,
+    "lng": 75.3580254,
+    "routes": ["Kannur Town", "Chalad", "Padanna"]
+  },
+  {
+    "id": "sreechand_hospital",
+    "name": "SreeChand Hospital Bus Stop",
+    "lat": 11.8712015,
+    "lng": 75.3597326,
+    "routes": ["Kannur Town", "Chalad", "Padanna"]
+  },
+  {
+    "id": "js_paul_junction",
+    "name": "JS Paul Junction Bus Stop",
+    "lat": 11.8721126,
+    "lng": 75.3636341,
+    "routes": ["Kannur Town", "Chirakkal", "Padanna"]
+  },
+  {
+    "id": "muneeswaran_kovil",
+    "name": "Muneeswaran Kovil Bus Stop",
+    "lat": 11.873396,
+    "lng": 75.364971,
+    "routes": ["Kannur Town", "Chirakkal"]
+  },
+  {
+    "id": "railway_station_west",
+    "name": "Railway Station West Bus Stop",
+    "lat": 11.871735,
+    "lng": 75.366638,
+    "routes": ["Kannur Town", "Kannur Railway Station", "Chirakkal"]
+  },
+  {
+    "id": "fort_road",
+    "name": "Fort Road Bus Stop",
+    "lat": 11.8702211,
+    "lng": 75.3675835,
+    "routes": ["Kannur Town", "Fort Road", "Old Bus Stand"]
+  },
+  {
+    "id": "plaza_junction",
+    "name": "Plaza Junction Bus Stop",
+    "lat": 11.8699767,
+    "lng": 75.3676576,
+    "routes": ["Kannur Town", "Fort Road", "Old Bus Stand"]
+  },
+  {
+    "id": "sbi_fort_road",
+    "name": "SBI Fort Road Bus Stop",
+    "lat": 11.868068,
+    "lng": 75.366597,
+    "routes": ["Kannur Town", "Fort Road"]
+  },
+  {
+    "id": "old_stand",
+    "name": "Old Stand Bus Stop",
+    "lat": 11.8759676,
+    "lng": 75.3665047,
+    "routes": ["Kannur Old Bus Stand", "Chirakkal", "Puthiyatheru"]
+  },
+  {
+    "id": "kannur_hospital",
+    "name": "Kannur Hospital Bus Stop",
+    "lat": 11.8606309,
+    "lng": 75.3720612,
+    "routes": ["Kannur Town", "Kannur Hospital", "City Bus Stand"]
+  },
+  {
+    "id": "puthiyatheru_main_jn",
+    "name": "Puthiyatheru Junction (NH 66)",
+    "lat": 11.913691,
+    "lng": 75.363163,
+    "routes": ["Kannur Town", "Taliparamba", "Payyanur", "Kanhangad"]
+  },
+  {
+    "id": "puthiyatheru_nithyananda",
+    "name": "Puthiyatheru (Nithyananda Stop)",
+    "lat": 11.913100,
+    "lng": 75.362900,
+    "routes": ["Kannur Old Bus Stand", "City Service", "Thavakkara"]
+  },
+  {
+    "id": "puthiyatheru_market",
+    "name": "Puthiyatheru Market Stop",
+    "lat": 11.914500,
+    "lng": 75.363500,
+    "routes": ["Valapattanam", "Pappinisseri", "Pazhayangadi"]
+  },
+  {
+    "id": "puthiyatheru_mandapam",
+    "name": "Puthiyatheru Mandapam Stop",
+    "lat": 11.912200,
+    "lng": 75.362500,
+    "routes": ["Chirakkal", "Azhikode", "Kannur"]
+  }
+]

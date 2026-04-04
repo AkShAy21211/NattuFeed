@@ -15,8 +15,8 @@ export default function IOSInstallPrompt() {
     const hasPrompted = localStorage.getItem('ios_prompt_dismissed');
 
     if (isIOS && !isStandalone && !hasPrompted) {
-      // Delay prompt to not annoy immediately
-      const timer = setTimeout(() => setIsVisible(true), 3000);
+      // Delay prompt to not annoy immediately (12s for poster users)
+      const timer = setTimeout(() => setIsVisible(true), 12000);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -46,10 +46,10 @@ export default function IOSInstallPrompt() {
           
           <div className="space-y-1">
             <h3 className="text-[14px] font-black text-gray-900 uppercase tracking-tight">
-              {t('installiOS') || 'Install NattuFeed'}
+              {t('installiOS')}
             </h3>
             <p className="text-[12px] text-gray-500 font-medium leading-relaxed max-w-[200px]">
-              {t('installiOSDesc') || 'Add to Home Screen for a native app experience.'}
+              {t('installiOSDesc')}
             </p>
           </div>
         </div>

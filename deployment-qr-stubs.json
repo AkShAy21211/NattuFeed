@@ -1,0 +1,275 @@
+[
+  {
+    "id": "17dSFskZua3F9fz1ObEr",
+    "name": "Thazhe Chovva Junction",
+    "url": "https://nattufeed.com/stop/17dSFskZua3F9fz1ObEr",
+    "district": "Kannur",
+    "routes": "Thalassery, Kozhikode, NH66 South Bound, Chala"
+  },
+  {
+    "id": "4EH1Lonjw7yEC7Q0eNhX",
+    "name": "Civil Station Stop",
+    "url": "https://nattufeed.com/stop/4EH1Lonjw7yEC7Q0eNhX",
+    "district": "Kannur",
+    "routes": "Caltex Junction, Talap, Collectorate Staff Routes"
+  },
+  {
+    "id": "5nLf6a6Bj90kBFC6yjEN",
+    "name": "Kannur Railway Station",
+    "url": "https://nattufeed.com/stop/5nLf6a6Bj90kBFC6yjEN",
+    "district": "Kannur",
+    "routes": "Mangalore, Kochi, Trivandrum, Chennai, Coimbatore"
+  },
+  {
+    "id": "6qmSOKae5SbaLsWtQE6j",
+    "name": "Pazhayangadi Bus Stand",
+    "url": "https://nattufeed.com/stop/6qmSOKae5SbaLsWtQE6j",
+    "district": "Kannur",
+    "routes": "Payyanur, Cherukunnu, Madayi Para, Mattool, Ezhome"
+  },
+  {
+    "id": "7snUCeIkyx9nJ3IiWtOV",
+    "name": "KSRTC Bus Stand Payyanur (Perumba)",
+    "url": "https://nattufeed.com/stop/7snUCeIkyx9nJ3IiWtOV",
+    "district": "Kannur",
+    "routes": "Kanhangad, Kasaragod, Taliparamba, Mangalore, Cherupuzha, Pariyaram"
+  },
+  {
+    "id": "8BMmEXzP9QOWhmaxdtpT",
+    "name": "Valapattanam Ferry Stop",
+    "url": "https://nattufeed.com/stop/8BMmEXzP9QOWhmaxdtpT",
+    "district": "Kannur",
+    "routes": "Pappinisseri, Puthiyatheru, Azhikkal, Mannad"
+  },
+  {
+    "id": "8T9rPAvhDwoTwO8G0wcN",
+    "name": "KANNUR NEW BUS TERMINAL",
+    "url": "https://nattufeed.com/stop/8T9rPAvhDwoTwO8G0wcN",
+    "district": "Kannur",
+    "routes": "Kozhikode, Thalassery, Payyanur, Mattannur, Iritty, Bangalore"
+  },
+  {
+    "id": "8oBlxCka2XXMMc6mx1m7",
+    "name": "Peralassery Stop",
+    "url": "https://nattufeed.com/stop/8oBlxCka2XXMMc6mx1m7",
+    "district": "Kannur",
+    "routes": "Thalassery, Kannur, Mamba, Kadachira"
+  },
+  {
+    "id": "BOae6otttcocEqiENVvT",
+    "name": "Taliparamba Bus Stand",
+    "url": "https://nattufeed.com/stop/BOae6otttcocEqiENVvT",
+    "district": "Kannur",
+    "routes": "Alakode, Cherupuzha, Payyavoor, Sreekandapuram, Irikkur, Iritty"
+  },
+  {
+    "id": "EmjLjwV3UAewiJeFysiE",
+    "name": "Dharmasala (Anthoor)",
+    "url": "https://nattufeed.com/stop/EmjLjwV3UAewiJeFysiE",
+    "district": "Kannur",
+    "routes": "Parassinikkadavu Temple, Kannur University, Bakkalam, Taliparamba"
+  },
+  {
+    "id": "FAdyZMD1yqS90oRnNLof",
+    "name": "Melechowa Junction",
+    "url": "https://nattufeed.com/stop/FAdyZMD1yqS90oRnNLof",
+    "district": "Kannur",
+    "routes": "Thalassery, Eachur, Mowanchery, Chala Bypass"
+  },
+  {
+    "id": "FGQYFSMKS4lcaAMEOhle",
+    "name": "Thavakkara Junction",
+    "url": "https://nattufeed.com/stop/FGQYFSMKS4lcaAMEOhle",
+    "district": "Kannur",
+    "routes": "Railway Station Link, New Bus Stand Link, City Center"
+  },
+  {
+    "id": "G0677OhKkP2VqECLUt6Y",
+    "name": "Sreekandapuram Junction",
+    "url": "https://nattufeed.com/stop/G0677OhKkP2VqECLUt6Y",
+    "district": "Kannur",
+    "routes": "Taliparamba, Iritty, Irikkur, Payyavoor, Chengalayi"
+  },
+  {
+    "id": "H2132fxHjW2CNjApLz6u",
+    "name": "Puthiyatheru Junction",
+    "url": "https://nattufeed.com/stop/H2132fxHjW2CNjApLz6u",
+    "district": "Kannur",
+    "routes": "Payyanur, Taliparamba, Pappinisseri, Valapattanam"
+  },
+  {
+    "id": "IdjhdNBKTmHRzgfeenGt",
+    "name": "Cherupuzha Bus Stand",
+    "url": "https://nattufeed.com/stop/IdjhdNBKTmHRzgfeenGt",
+    "district": "Kannur",
+    "routes": "Payyanur, Alakode, Pulingome, Thirumeni, Karnataka Border"
+  },
+  {
+    "id": "JOKsY2MrgRcuMXyjd5fk",
+    "name": "Anjarakandy Junction",
+    "url": "https://nattufeed.com/stop/JOKsY2MrgRcuMXyjd5fk",
+    "district": "Kannur",
+    "routes": "Chakkarakkal, Mattannur, Mamba, Thalassery"
+  },
+  {
+    "id": "LJfpceAb6KFSpOXBWG9P",
+    "name": "Kuthuparamba Bus Stand",
+    "url": "https://nattufeed.com/stop/LJfpceAb6KFSpOXBWG9P",
+    "district": "Kannur",
+    "routes": "Panoor, Thalassery, Mattannur, Uruvachal, Kannur City"
+  },
+  {
+    "id": "LeDfizOXkOrtZmclePA8",
+    "name": "KSRTC Bus Stand Kannur (Caltex)",
+    "url": "https://nattufeed.com/stop/LeDfizOXkOrtZmclePA8",
+    "district": "Kannur",
+    "routes": "Thiruvananthapuram, Kochi, Coimbatore, Madurai, Sultan Bathery, Palakkad, Kasaragod, Taliparamba"
+  },
+  {
+    "id": "PTf3H0dK6nCYrnXpZBg4",
+    "name": "Panoor Bus Stand",
+    "url": "https://nattufeed.com/stop/PTf3H0dK6nCYrnXpZBg4",
+    "district": "Kannur",
+    "routes": "Thalassery, Kuthuparamba, Nadapuram, Mahe, Peringathur"
+  },
+  {
+    "id": "Qu3N6gqU4fFYIKDu5NMM",
+    "name": "Alakode Bus Stand",
+    "url": "https://nattufeed.com/stop/Qu3N6gqU4fFYIKDu5NMM",
+    "district": "Kannur",
+    "routes": "Taliparamba, Cherupuzha, Udayagiri, Karthikapuram, Karuvanchal"
+  },
+  {
+    "id": "SmUcWuYSNleMmvOEikwB",
+    "name": "Pappinisseri Junction",
+    "url": "https://nattufeed.com/stop/SmUcWuYSNleMmvOEikwB",
+    "district": "Kannur",
+    "routes": "Parassinikkadavu, Valapattanam, Vellikkeel, Pazhayangadi"
+  },
+  {
+    "id": "TO9aEC1TJeE7n2l5fy0v",
+    "name": "Peravoor Bus Stand",
+    "url": "https://nattufeed.com/stop/TO9aEC1TJeE7n2l5fy0v",
+    "district": "Kannur",
+    "routes": "Iritty, Kuthuparamba, Nidumpoil, Mananthavady"
+  },
+  {
+    "id": "V4HJIV977tMUrznzDZnN",
+    "name": "Thalassery New Bus Stand",
+    "url": "https://nattufeed.com/stop/V4HJIV977tMUrznzDZnN",
+    "district": "Kannur",
+    "routes": "Kuthuparamba, Mananthavady, Nadapuram, Panoor, Kozhikode, Vatakara"
+  },
+  {
+    "id": "Vkf5b6JSdKsJeHGY1rzj",
+    "name": "Chalad Junction",
+    "url": "https://nattufeed.com/stop/Vkf5b6JSdKsJeHGY1rzj",
+    "district": "Kannur",
+    "routes": "Azhikode, Kannur Town, Payyambalam, Padanapalam"
+  },
+  {
+    "id": "YZaGxMJk5BL3AJd3aGso",
+    "name": "Mattannur Bus Stand",
+    "url": "https://nattufeed.com/stop/YZaGxMJk5BL3AJd3aGso",
+    "district": "Kannur",
+    "routes": "Kannur Airport, Iritty, Sivapuram, Thalassery, Kuthuparamba"
+  },
+  {
+    "id": "Zu1qIkdJ0qZEdBWWHNZr",
+    "name": "Pilathara Junction",
+    "url": "https://nattufeed.com/stop/Zu1qIkdJ0qZEdBWWHNZr",
+    "district": "Kannur",
+    "routes": "Pariyaram Medical College, Payyanur, Taliparamba, Mathil"
+  },
+  {
+    "id": "dRIxTQmdkbeUOx5aFD5G",
+    "name": "Chakkarakkal Junction",
+    "url": "https://nattufeed.com/stop/dRIxTQmdkbeUOx5aFD5G",
+    "district": "Kannur",
+    "routes": "Anjarakandy, Eachur, Mamba, Kannur City, Mattannur"
+  },
+  {
+    "id": "dhY1f2AvFYi0crI0I6wo",
+    "name": "Moonunirath Junction",
+    "url": "https://nattufeed.com/stop/dhY1f2AvFYi0crI0I6wo",
+    "district": "Kannur",
+    "routes": "Azhikode, Kannur City, Alavil, Vankulathuvayal"
+  },
+  {
+    "id": "eho2OgycNzOuOxpf0Bzy",
+    "name": "Plaza Junction",
+    "url": "https://nattufeed.com/stop/eho2OgycNzOuOxpf0Bzy",
+    "district": "Kannur",
+    "routes": "Railway Station, Fort Road, Thavakkara, Thana"
+  },
+  {
+    "id": "eq9FsXJqGgUKfZxIrU6S",
+    "name": "Alavil Junction",
+    "url": "https://nattufeed.com/stop/eq9FsXJqGgUKfZxIrU6S",
+    "district": "Kannur",
+    "routes": "Kannur City, Azhikode, Pallikunnu, Manal"
+  },
+  {
+    "id": "f36h01kLJO58JxhagexG",
+    "name": "Azhikode High School Stop",
+    "url": "https://nattufeed.com/stop/f36h01kLJO58JxhagexG",
+    "district": "Kannur",
+    "routes": "Kannur City, Azhikkal Ferry, Valapattanam, Chalad"
+  },
+  {
+    "id": "i8UzPpCU2g2AsQ1h8Hpx",
+    "name": "Eachur Junction",
+    "url": "https://nattufeed.com/stop/i8UzPpCU2g2AsQ1h8Hpx",
+    "district": "Kannur",
+    "routes": "Mowanchery, Chakkarakkal, Melechowa, Kannur City"
+  },
+  {
+    "id": "kHKiUycnbutclGikEOFr",
+    "name": "Chala Junction (Bypass)",
+    "url": "https://nattufeed.com/stop/kHKiUycnbutclGikEOFr",
+    "district": "Kannur",
+    "routes": "Thalassery Bypass, Melechowa, Thazhe Chovva, Nadal"
+  },
+  {
+    "id": "n937Y9E6qWJ22btKXwaC",
+    "name": "Payyambalam Beach Stop",
+    "url": "https://nattufeed.com/stop/n937Y9E6qWJ22btKXwaC",
+    "district": "Kannur",
+    "routes": "Pallikunnu, Chalad, City Circular"
+  },
+  {
+    "id": "oKAdofS2CD5CyrHoE16O",
+    "name": "Poothapara Stop",
+    "url": "https://nattufeed.com/stop/oKAdofS2CD5CyrHoE16O",
+    "district": "Kannur",
+    "routes": "Azhikkal, Alavil, Kannur Town, Valapattanam"
+  },
+  {
+    "id": "qaohPUkC5B8Gxl6yAk7p",
+    "name": "Iritty Bus Station",
+    "url": "https://nattufeed.com/stop/qaohPUkC5B8Gxl6yAk7p",
+    "district": "Kannur",
+    "routes": "Virajpet, Mysore, Bangalore, Peravoor, Vallithode, Ulikkal"
+  },
+  {
+    "id": "r2St1EWscaX5KUJg5aln",
+    "name": "SN Park Bus Stop",
+    "url": "https://nattufeed.com/stop/r2St1EWscaX5KUJg5aln",
+    "district": "Kannur",
+    "routes": "Thana, Caltex, Railway Station, Fort Road"
+  },
+  {
+    "id": "vWG6qZsiMRZdB1K6je2n",
+    "name": "Thana Junction",
+    "url": "https://nattufeed.com/stop/vWG6qZsiMRZdB1K6je2n",
+    "district": "Kannur",
+    "routes": "Mattannur, Airport, Thalassery (via Highway), Melechowa"
+  },
+  {
+    "id": "wfeNlwK9k5mfdGlPY7uT",
+    "name": "Padanapalam Stop",
+    "url": "https://nattufeed.com/stop/wfeNlwK9k5mfdGlPY7uT",
+    "district": "Kannur",
+    "routes": "Chalad, Talap, Civil Station, Kannur City"
+  }
+]

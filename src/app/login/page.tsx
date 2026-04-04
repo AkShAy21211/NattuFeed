@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [otp, setOtp] = useState("");
-  
+
   // Toggle this to true to re-enable Phone OTP Authentication
   const SHOW_PHONE_AUTH = false;
 
@@ -28,10 +28,9 @@ export default function LoginPage() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      showToast(t("welcomeBack"), "success");
+
     } catch {
       showToast(t("googleFail"), "error");
-    } finally {
       setGoogleLoading(false);
     }
   };
@@ -78,11 +77,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-[85vh] px-6 overflow-hidden">
-      
-      {/* ── Background Flares ── */}
-      <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-[80px]" />
-      <div className="absolute bottom-[20%] left-[-20%] w-80 h-80 bg-emerald-500/5 rounded-full blur-[100px]" />
+    <div className="relative flex flex-col items-center justify-center min-h-[75vh] sm:min-h-[80vh] px-6 overflow-hidden py-10">
+
+      {/* ── Background Flares & Depth ── */}
+      <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-[80px] animate-pulse" />
+      <div className="absolute bottom-[20%] left-[-20%] w-80 h-80 bg-emerald-500/5 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
+
+      {/* Floating Sparkles/Particles */}
+      <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-primary/20 rounded-full animate-ping" />
+      <div className="absolute bottom-1/3 right-1/4 w-1.5 h-1.5 bg-emerald-400/20 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/2 right-10 w-1 h-1 bg-amber-400/20 rounded-full animate-ping" style={{ animationDelay: '3s' }} />
 
       {/* ── Brand ── */}
       <div className="relative text-center mb-10 z-10">
@@ -98,34 +102,48 @@ export default function LoginPage() {
         <p className="text-sm font-bold text-primary tracking-[0.2em] uppercase mt-2 opacity-80">{t("connecting")}</p>
       </div>
 
-      <div className="relative w-full max-w-sm space-y-4 z-10">
+      <div className="relative w-full max-w-sm space-y-2 z-10">
+
+        {/* ── Local Identity Hook ── */}
+        <div className="text-center mb-6 animate-in fade-in slide-in-from-top-4 duration-700">
+          <div className="inline-block bg-white/60 backdrop-blur-md rounded-2xl px-5 py-3 border border-white/40 shadow-sm relative group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/0 via-emerald-100/20 to-emerald-50/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+            <p className="text-[14px] font-black text-emerald-900 leading-tight flex items-center justify-center gap-2">
+              {t('loginIdentityLine')}
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+            </p>
+            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1 opacity-70">
+              {t('loginIdentitySub')}
+            </p>
+          </div>
+        </div>
 
         {/* ════════ STEP 1: Phone + Name ════════ */}
         {!otpMode ? (
           <>
             {/* Google sign-in */}
+            {/* Google sign-in with Shimmer */}
             <button
               onClick={handleGoogleSignIn}
               disabled={loading || googleLoading}
-              className="w-full h-16 flex items-center justify-center gap-3 bg-white border border-gray-100 py-4 px-6 rounded-xl font-black text-gray-700 hover:bg-gray-50 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-gray-200/20 uppercase text-[11px] tracking-wider"
+              className="group relative w-full h-16 flex items-center justify-center gap-3 bg-white border border-gray-100 py-4 px-6 rounded-2xl font-black text-gray-700 hover:bg-gray-50 transition-all active:scale-[0.97] disabled:opacity-50 shadow-xl shadow-black/5 overflow-hidden uppercase text-[11px] tracking-[0.15em]"
             >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-100/30 to-transparent -translate-x-[200%] group-hover:translate-x-[200%] transition-transform duration-1000 ease-in-out" />
               {googleLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
               ) : (
-                <GoogleLogo />
+                <div className="transition-transform group-hover:scale-110 duration-300">
+                  <GoogleLogo />
+                </div>
               )}
               {t("contGoogle")}
             </button>
 
             {!SHOW_PHONE_AUTH && (
-              <div className="pt-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest text-center mb-6">{t("featureTitle")}</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <FeatureItem icon={<Bus className="w-5 h-5" />} label={t("featureTraffic")} />
-                  <FeatureItem icon={<ShoppingBag className="w-5 h-5" />} label={t("featureMarket")} />
-                  <FeatureItem icon={<ShieldAlert className="w-5 h-5" />} label={t("featureAlerts")} />
-                  <FeatureItem icon={<CheckCircle2 className="w-5 h-5" />} label={t("featureTrust")} />
-                </div>
+              <div className="pt-4 pb-2 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <p className="text-[12px] font-bold text-gray-400 text-center italic">
+                  {t("connecting")}
+                </p>
               </div>
             )}
 
@@ -190,37 +208,40 @@ export default function LoginPage() {
           /* ════════ STEP 2: OTP Entry ════════ */
           <form
             onSubmit={handleOtpVerify}
-            className="space-y-5 animate-in slide-in-from-right duration-300"
+            className="space-y-6 animate-in slide-in-from-right duration-500 p-1"
           >
             <button
               type="button"
               onClick={() => { setOtpMode(false); setOtp(""); }}
-              className="flex items-center gap-1.5 text-primary font-bold text-sm"
+              className="flex items-center gap-1.5 text-primary font-black text-[10px] uppercase tracking-widest hover:bg-primary/5 px-3 py-2 rounded-lg transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
               {t("backToOptions")}
             </button>
 
-            <div className="text-center">
-              <h2 className="text-xl font-black text-gray-900">{t("verifyOtpTitle")}</h2>
-              <p className="text-sm text-gray-400 mt-1">{t("sentTo", { phoneNumber })}</p>
+            <div className="text-center px-4">
+              <h2 className="text-2xl font-black text-gray-900 leading-tight">{t("verifyOtpTitle")}</h2>
+              <p className="text-[13px] font-bold text-gray-400 mt-2">{t("sentTo", { phoneNumber })}</p>
             </div>
 
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="• • • • • •"
-              maxLength={6}
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              className="w-full bg-white border-2 border-gray-100 py-5 px-6 text-center text-3xl font-black tracking-[0.5em] rounded-2xl focus:border-primary outline-none transition-colors shadow-sm"
-              required
-            />
+            <div className="relative group">
+              <div className="absolute inset-0 bg-primary/5 rounded-3xl blur-xl group-focus-within:bg-primary/10 transition-colors" />
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="000000"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                className="relative w-full bg-white/80 backdrop-blur-sm border-2 border-gray-100 py-6 px-6 text-center text-4xl font-black tracking-[0.4em] rounded-[2rem] focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all shadow-xl shadow-black/5"
+                required
+              />
+            </div>
 
             <button
               type="submit"
               disabled={loading || otp.length < 6}
-              className="w-full bg-primary text-white py-4 px-6 rounded-xl font-black uppercase tracking-[2px] hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 text-[11px] shadow-lg shadow-primary/20"
+              className="w-full bg-primary text-white py-5 px-6 rounded-2xl font-black uppercase tracking-[0.2em] hover:brightness-110 shadow-xl shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 text-[11px]"
             >
               {loading
                 ? <Loader2 className="w-5 h-5 animate-spin" />
@@ -234,7 +255,7 @@ export default function LoginPage() {
       {/* Required for Firebase Phone Auth reCAPTCHA — must stay in the DOM */}
       <div id="recaptcha-container" className="hidden" />
 
-      <p className="mt-12 text-center text-[10px] text-gray-400 max-w-[280px] leading-relaxed relative z-10 font-medium">
+      <p className="mt-8 text-center text-[10px] text-gray-400 max-w-[280px] leading-relaxed relative z-10 font-medium opacity-60">
         {t("legalNote")}{" "}
         <Link href="/terms" className="text-primary font-bold hover:underline">{t("termsOfServiceTitle")}</Link> &{" "}
         <Link href="/privacy" className="text-primary font-bold hover:underline">{t("privacyPolicyTitle")}</Link>
@@ -245,16 +266,6 @@ export default function LoginPage() {
 
 /* ─── Small sub-components ──────────────────────────────────────── */
 
-function FeatureItem({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <div className="bg-white/40 backdrop-blur-sm border border-gray-100 p-4 rounded-[2rem] flex flex-col items-center text-center gap-2 transition-all hover:border-primary/20 hover:bg-white/60">
-      <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-        {icon}
-      </div>
-      <span className="text-[10px] font-black leading-tight text-gray-600 line-clamp-2">{label}</span>
-    </div>
-  );
-}
 
 function Divider() {
   const { t } = useLanguage();

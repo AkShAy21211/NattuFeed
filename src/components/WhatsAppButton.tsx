@@ -65,10 +65,10 @@ export default function WhatsAppButton() {
       
       {/* Status indicator footer */}
        <div className="bg-[#25D366]/[0.03] px-5 py-2 flex items-center justify-between border-t border-[#25D366]/5">
-         <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Typical response: &lt; 2h</span>
+         <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Typical response: &lt; 2h</span>
          <div className="flex items-center gap-1.5">
             <span className="flex h-1 w-1 rounded-full bg-[#25D366] animate-pulse" />
-            <span className="text-[8px] font-black text-[#25D366] uppercase tracking-[0.2em]">Live Support</span>
+            <span className="text-[9px] font-black text-[#25D366] uppercase tracking-[0.2em]">Live Support</span>
          </div>
       </div>
     </div>

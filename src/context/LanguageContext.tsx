@@ -4,12 +4,22 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 type Language = "en" | "ml";
 
-const translations: Record<string, Record<Language, string>> = {
+type TranslationValue = Record<Language, string> | { [key: string]: Record<Language, string> };
+
+const translations: Record<string, TranslationValue> = {
   // Feed / General
   localHub: { en: "Local Hub", ml: "പ്രാദേശിക വാർത്തകൾ" },
   feed: { en: "Feed", ml: "ഫീഡ്" },
   leaderboard: { en: "Leaderboard", ml: "റാങ്കിംഗ്" },
   profile: { en: "Profile", ml: "പ്രൊഫൈൽ" },
+  profileTitle: { en: "My Dashboard", ml: "എന്റെ ഡാഷ്‌ബോർഡ്" },
+  settingsTitle: { en: "Settings", ml: "സെറ്റിംഗ്സ്" },
+  notifications: { en: "Notifications", ml: "അറിയിപ്പുകൾ" },
+  noNotifications: { en: "No notifications yet", ml: "അറിയിപ്പുകളൊന്നുമില്ല" },
+  markAllRead: { en: "Mark all as read", ml: "എല്ലാം 'Read' ആക്കുക" },
+  notificationReaction: { en: "{name} reacted to your post", ml: "{name} നിങ്ങളുടെ പോസ്റ്റിനോട് പ്രതികരിച്ചു" },
+  notificationVerified: { en: "{name} verified your update", ml: "{name} നിങ്ങളുടെ വാർത്ത ശരിവെച്ചു" },
+  notificationBusRadar: { en: "{name} updated Bus Radar at {stop}", ml: "{name} {stop}-ൽ ബസ്സ് റഡാർ പുതുക്കി" },
   loading: { en: "Loading local updates...", ml: "വാർത്തകൾ ലോഡ് ചെയ്യുന്നു..." },
   syncingProfile: { en: "Syncing Profile...", ml: "പ്രൊഫൈൽ പുതുക്കുന്നു..." },
   noPostsTitle: { en: "No updates yet", ml: "വാർത്തകൾ ലഭ്യമല്ല" },
@@ -18,6 +28,7 @@ const translations: Record<string, Record<Language, string>> = {
   radiusLabel: { en: "{radius}km radius", ml: "{radius} കി.മീ ചുറ്റളവ്" },
   globalFeed: { en: "All Kerala Feed", ml: "കേരളം മുഴുവൻ" },
   refresh: { en: "Refresh", ml: "പുതുക്കുക" },
+  back: { en: "Back", ml: "തിരിച്ചു പോകുക" },
   kerala: { en: "Kerala", ml: "കേരളം" },
   yourArea: { en: "Your Area", ml: "നിങ്ങളുടെ പ്രദേശം" },
   viewingEverywhere: { en: "Viewing everywhere", ml: "കേരളത്തിലെ എല്ലാ വാർത്തകളും" },
@@ -55,12 +66,14 @@ const translations: Record<string, Record<Language, string>> = {
   loggingIn: { en: "Logging in...", ml: "ലോഗിൻ ചെയ്യുന്നു..." },
   legalNote: { en: "By signing in, you agree to our", ml: "ലോഗിൻ ചെയ്യുന്നതിലൂടെ നിങ്ങൾ പാലിപ്പിക്കാൻ ബാധ്യസ്ഥരാണ്:" },
   privacyPolicy: { en: "Privacy Policy", ml: "സ്വകാര്യതാ നയം" },
-  googleFail: { en: "Google sign in failed.", ml: "ഗൂഗിൾ ലോഗിൻ പരാജയപ്പെട്ടു." },
+  googleFail: { en: "Google sign in failed. Check your connection and try again.", ml: "ഗൂഗിൾ സൈൻ ഇൻ പരാജയപ്പെട്ടു. ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിക്കുക." },
   validPhone: { en: "Enter a valid 10-digit phone number.", ml: "ശരിയായ ഫോൺ നമ്പർ നൽകൂ." },
   validName: { en: "Enter a valid name.", ml: "ശരിയായ പേര് നൽകൂ." },
   otpSendFail: { en: "Failed to send OTP.", ml: "ഒടിപി അയക്കാൻ കഴിഞ്ഞില്ല." },
   invalidOtp: { en: "Invalid OTP.", ml: "ഒടിപി തെറ്റാണ്." },
   connecting: { en: "Connecting your neighborhood", ml: "നിങ്ങളുടെ അയൽക്കാരെ ബന്ധിപ്പിക്കുന്നു" },
+  loginIdentityLine: { en: "NattuFeed is live in Kannur.", ml: "നാട്ടുഫീഡ് ഇപ്പോൾ കണ്ണൂരിൽ ലൈവാണ്." },
+  loginIdentitySub: { en: "Join your neighbors already posting.", ml: "നിങ്ങളുടെ അയൽക്കാർ വാർത്തകൾ പങ്കുവെച്ചു തുടങ്ങി." },
   contGoogle: { en: "Continue with Google", ml: "ഗൂഗിൾ വഴി തുടരുക" },
   fullNameLabel: { en: "Full Name", ml: "പൂർണ്ണനാമം" },
   phonePlaceholder: { en: "00000 00000", ml: "00000 00000" },
@@ -84,19 +97,21 @@ const translations: Record<string, Record<Language, string>> = {
   category: { en: "Category", ml: "വിഭാഗം" },
   selectCategory: { en: "Select Category", ml: "വിഭാഗം തിരഞ്ഞെടുക്കുക" },
   enterHeadline: { en: "Please enter a headline", ml: "തലക്കെട്ട് നൽകുക" },
+  selectTypeFirst: { en: "Please select a type first", ml: "ആദ്യം ഒരു വിഭാഗം തിരഞ്ഞെടുക്കുക" },
+  enterContactPhone: { en: "Please enter a contact number", ml: "ഫോൺ നമ്പർ നൽകുക" },
   locationRequired: { en: "Location is required to post", ml: "ലൊക്കേഷൻ ലഭ്യമായിരിക്കണം" },
+  optionalLabel: { en: "Optional", ml: "ഐഛികം" },
   restrictedLanguage: { en: "Please avoid using offensive language", ml: "മോശമായ വാക്കുകൾ ഒഴിവാക്കുക" },
   nativeMember: { en: "Helpful Local", ml: "സഹായ മനസ്ഥിതിയുള്ള നാട്ടുകാർ" },
   statusChecking: { en: "Checking...", ml: "പരിശോധിക്കുന്നു..." },
   viewOnMap: { en: "View on Map / Navigate", ml: "മാപ്പിൽ കാണുക / പോകുക" },
-  reportPost: { en: "Report this update", ml: "ഈ വാർത്ത റിപ്പോർട്ട് ചെയ്യുക" },
   // Post Detail Page
   loadingDetails: { en: "Gathering details...", ml: "വിവരങ്ങൾ ശേഖരിക്കുന്നു..." },
   postNotFound: { en: "Update Not Found", ml: "വാർത്ത ലഭ്യമല്ല" },
   postNotFoundDesc: { en: "The update you're looking for might have been removed or has expired.", ml: "നിങ്ങൾ തിരയുന്ന വാർത്ത നീക്കം ചെയ്യുകയോ കാലഹരണപ്പെടുകയോ ചെയ്തിരിക്കാം." },
   updateDetails: { en: "Update Details", ml: "വാർത്തയുടെ വിവരങ്ങൾ" },
   postedOn: { en: "Posted On", ml: "പങ്കുവെച്ചത്" },
-  radarInfoMsg: { en: "This is a real-time citizen-tracked bus location. Its accuracy depends on how recently it was reported.", ml: "ഇതൊരു തത്സമയ ബസ് ലൊക്കേഷനാണ്. ഇതിന്റെ കൃത്യത റിപ്പോർട്ട് ചെയ്ത സമയത്തെ ആശ്രയിച്ചിരിക്കും." },
+  radarInfoMsg: { en: "This is a real-time community sighting. Accuracy depends on how recently it was reported.", ml: "ഇതൊരു തത്സമയ ബസ് കാഴ്ചയാണ്. ഇതിന്റെ കൃത്യത റിപ്പോർട്ട് ചെയ്ത സമയത്തെ ആശ്രയിച്ചിരിക്കും." },
   viewDetails: { en: "View Full Update", ml: "മുഴുവൻ വാർത്തയും കാണുക" },
   viewTrackDetails: { en: "View Live Tracking", ml: "തത്സമയ ട്രാക്കിംഗ് കാണുക" },
   linkCopied: { en: "Link copied to clipboard!", ml: "ലിങ്ക് കോപ്പി ചെയ്തു!" },
@@ -106,6 +121,7 @@ const translations: Record<string, Record<Language, string>> = {
   categoryUtility: { en: "Utility", ml: "യൂട്ടിലിറ്റി" },
   categoryMarket: { en: "Market", ml: "മാർക്കറ്റ്" },
   categoryServices: { en: "Services", ml: "സേവനങ്ങൾ" },
+  categoryGigsJobs: { en: "Gigs & Jobs", ml: "ജോലികൾ" },
   categoryHealth: { en: "Health", ml: "ആരോഗ്യം" },
   categoryAlerts: { en: "Alerts", ml: "അലേർട്ടുകൾ" },
   categoryTownTalk: { en: "Town Talk", ml: "നാട്ടുവിശേഷം" },
@@ -126,6 +142,7 @@ const translations: Record<string, Record<Language, string>> = {
   hintServices: { en: "Driver, electrician, plumber, coconut climber", ml: "ഡ്രൈവർ, ഇലക്ട്രീഷ്യൻ, തഴോളി, തെങ്ങുകയറ്റം" },
   hintHealth: { en: "Blood needed, ambulance, pharmacy info", ml: "രക്തം വേണം, ആംബുലൻസ്, മരുന്ന് വിവരങ്ങൾ" },
   hintAlerts: { en: "Hartal, heavy rain, festival, stray dog", ml: "ഹർത്താൽ, കനത്ത മഴ, ഉത്സവം, തെരുവുനായ" },
+  hintGigsJobs: { en: "Looking for driver, helper, shop staff or daily labor?", ml: "ഡ്രൈവർ, ഹെൽപ്പർ, കടകളിലെ സ്റ്റാഫ് തുടങ്ങിയവ കണ്ടെത്താം." },
   hintTownTalk: { en: "Hidden gems, local food spots, neighborhood news", ml: "നാട്ടിലെ പുത്തൻ വിശേഷങ്ങൾ, നല്ല ഭക്ഷണശാലകൾ" },
   newUpdate: { en: "New Update", ml: "പുതിയ അറിയിപ്പ്" },
   titleRadar: { en: "Radar a Bus", ml: "ബസ് റഡാർ" },
@@ -135,7 +152,24 @@ const translations: Record<string, Record<Language, string>> = {
   titleServices: { en: "Service Listing", ml: "സേവനങ്ങൾ" },
   titleHealth: { en: "Health/Medical", ml: "ആരോഗ്യ അറിയിപ്പ്" },
   titleAlerts: { en: "Urgent Alert", ml: "അടിയന്തര അറിയിപ്പ്" },
+  titleGigsJobs: { en: "Gig / Job Opportunity", ml: "ജോലി വിവരങ്ങൾ" },
   titleTownTalk: { en: "Town Discovery", ml: "നാട്ടുവിശേഷം" },
+  localOnlyCategory: { 
+    en: "Only neighbors around here can post in this category. Join the Town Talk instead! 🏡", 
+    ml: "ഈ വിഭാഗത്തിൽ നാട്ടുകാർക്ക് മാത്രമേ പോസ്റ്റ് ചെയ്യാൻ കഴിയൂ. നാട്ടുവിശേഷം പങ്കുവെക്കൂ! 🏡" 
+  },
+  mobileOnlyFeature: {
+    en: "Heads up! Posting here is a mobile-only treat for live commuters. 📱",
+    ml: "മൊബൈലിൽ ഉള്ളവർക്ക് മാത്രമേ ഈ വിഭാഗത്തിൽ പോസ്റ്റ് ചെയ്യാൻ കഴിയൂ. 📱"
+  },
+  mobileOnlyVerification: {
+    en: "Witnessing is for neighbors on the move! Please use your mobile to verify. 🤳",
+    ml: "മൊബൈലിൽ ഉള്ളവർക്ക് മാത്രമേ ശാരിവെക്കാൻ (Verify) കഴിയൂ. 🤳"
+  },
+  keralaOnlyReaction: {
+    en: "Witnessing is local-only for now! Join the talk from Kerala. 🌴",
+    ml: "സാക്ഷ്യപ്പെടുത്തൽ കേരളത്തിലുള്ളവർക്ക് മാത്രമുള്ളതാണ്. 🌴"
+  },
   
   promptTraffic: { en: "Road blocks or accidents?", ml: "റോഡ് ബ്ലോക്ക് അല്ലെങ്കിൽ അപകടം ഉണ്ടോ?" },
   promptUtility: { en: "Power, Water, or Road updates?", ml: "വൈദ്യുതി, വെള്ളം അല്ലെങ്കിൽ റോഡ് വാർത്തകൾ?" },
@@ -143,6 +177,7 @@ const translations: Record<string, Record<Language, string>> = {
   promptServices: { en: "Need or offering a local service?", ml: "സേവനങ്ങൾ ആവശ്യമുണ്ടോ അതോ നൽകുന്നുണ്ടോ?" },
   promptHealth: { en: "Medical emergencies or info?", ml: "മരുന്ന് അല്ലെങ്കിൽ മറ്റ് ആരോഗ്യ വിവരങ്ങൾ?" },
   promptAlerts: { en: "Emergency news for neighbors?", ml: "അയാൽപക്കക്കാർ അറിയേണ്ട അടിയന്തര വിവരങ്ങൾ?" },
+  promptGigsJobs: { en: "Need a hand or seeking work?", ml: "ജോലി ആവശ്യമുണ്ടോ അതോ നൽകുന്നുണ്ടോ?" },
   promptTownTalk: { en: "Spot anything interesting in your neighborhood?", ml: "നാട്ടിലെ പുത്തൻ വിശേഷങ്ങൾ പങ്കുവെക്കൂ?" },
 
   tagRoadBlock: { en: "Road Block", ml: "റോഡ് ബ്ലോക്ക്" },
@@ -162,20 +197,152 @@ const translations: Record<string, Record<Language, string>> = {
   tagSpotting: { en: "Spotting", ml: "സ്പോട്ടിംഗ്" },
   cancel: { en: "Cancel", ml: "വേണ്ട" },
   headlinePlaceholder: { en: "What's happening?", ml: "എന്തിനെക്കുറിച്ചാണ്?" },
-  landmarkLabel: { en: "Nearby Landmark", ml: "അടുത്തുള്ള പ്രധാന സ്ഥലം" },
   landmarkPlaceholder: { en: "e.g. Near School, Junction...", ml: "ഉദാ: സ്ക്കൂൾ പറമ്പ്, ജംഗ്ഷൻ..." },
   detailsPlaceholder: { en: "More details (optional)...", ml: "കൂടുതൽ വിവരങ്ങൾ..." },
   headlineLabel: { en: "Headline", ml: "തലക്കെട്ട്" },
   detailsLabel: { en: "Details", ml: "വിവരങ്ങൾ" },
+  landmarkLabel: { en: "Landmark / Area", ml: "സ്ഥലം / ഏരിയ" },
+
+  // Category Specific Placeholders/Labels
+  placeHeadlineTraffic: { en: "e.g. Tree fallen, Road Block", ml: "റോഡ് ബ്ലോക്ക്, അപകടം" },
+  placeDetailsTraffic: { en: "Alternative routes or delay info...", ml: "മറ്റൊരു വഴി ഉണ്ടോ?" },
+  labelLandmarkTraffic: { en: "Exact Location", ml: "സ്ഥലം" },
+
+  placeHeadlineUtility: { en: "e.g. Pipe burst, Water tank leak", ml: "വൈദ്യുതി/വെള്ളം പ്രശ്നങ്ങൾ" },
+  placeDetailsUtility: { en: "Since when? Extent of issue...", ml: "എപ്പോഴാണ് സംഭവിച്ചത്?" },
+  labelLandmarkUtility: { en: "Service Point", ml: "സേവന കേന്ദ്രം" },
+
+  placeHeadlineMarket: { en: "e.g. Sardine ₹100, Onion price up", ml: "സാധനങ്ങളുടെ വിലവിവരങ്ങൾ" },
+  placeDetailsMarket: { en: "Quality, stock, or shop hours...", ml: "നിലവാരം അല്ലെങ്കിൽ സ്റ്റോക്ക്" },
+  labelLandmarkMarket: { en: "Shop / Market Name", ml: "കട അല്ലെങ്കിൽ ചന്ത" },
+
+  placeHeadlineServices: { en: "e.g. Home Electrician Available", ml: "ലഭ്യമായ സേവനങ്ങൾ" },
+  placeDetailsServices: { en: "Timings, tools, experience...", ml: "സമയക്രമം, ടൂളുകൾ" },
+  labelLandmarkServices: { en: "Shop / Address", ml: "കടയുടെ വിലാസം" },
+
+  placeHeadlineHealth: { en: "e.g. O+ Blood Needed, Oxygen info", ml: "മരുന്ന് അല്ലെങ്കിൽ രക്തം ആവശ്യമുണ്ട്" },
+  placeDetailsHealth: { en: "Hospital, Patient info, Urgency...", ml: "ആശുപത്രി വിവരം" },
+  labelLandmarkHealth: { en: "Hospital / Clinic", ml: "ആശുപത്രി" },
+
+  placeHeadlineAlerts: { en: "e.g. Heavy Rain Warning", ml: "അടിയന്തര അറിയിപ്പുകൾ" },
+  placeDetailsAlerts: { en: "Precautions or emergency numbers...", ml: "മുൻകരുതലുകൾ അറിയിക്കൂ" },
+  labelLandmarkAlerts: { en: "Affected Area", ml: "പ്രശ്ന ബാധിത പ്രദേശം" },
+
+  placeHeadlineGigsJobs: { en: "e.g. Helper needed for shop", ml: "ജോലി ഒഴിവുകൾ" },
+  placeDetailsGigsJobs: { en: "Job requirements & benefits...", ml: "യോഗ്യതകൾ, സമയം" },
+  labelLandmarkGigsJobs: { en: "Work Location", ml: "ജോലി സ്ഥലം" },
+
+  placeHeadlineTownTalk: { en: "e.g. New park opened, Local fest", ml: "നാട്ടിലെ വിശേഷങ്ങൾ" },
+  placeDetailsTownTalk: { en: "What's special? Tell the story!", ml: "വിശദമായ വിവരങ്ങൾ" },
+  labelLandmarkTownTalk: { en: "Discovery Spot", ml: "സ്ഥലത്തിന്റെ പേര്" },
+
+  // Category-specific Landmark Placeholders
+  placeLandmarkTraffic: { en: "e.g. NH 66, Caltex Junction", ml: "ഉദാ: NH 66, ജംഗ്ഷൻ" },
+  placeLandmarkUtility: { en: "e.g. Ward 5, Azheekkal area", ml: "ഉദാ: വാർഡ് 5, ഏരിയ" },
+  placeLandmarkMarket: { en: "e.g. Kadappuram Bazaar, AK Market", ml: "ഉദാ: ചന്ത, കട" },
+  placeLandmarkServices: { en: "e.g. Near Town Hall, Main Road", ml: "ഉദാ: ടൗൺ ഹാൾ, മെയിൻ റോഡ്" },
+  placeLandmarkHealth: { en: "e.g. Near GMC, District Hospital", ml: "ഉദാ: ആശുപത്രി" },
+  placeLandmarkAlerts: { en: "e.g. North Kannur, Azhikode area", ml: "ഉദാ: ഏരിയ, സ്ഥലം" },
+  placeLandmarkGigsJobs: { en: "e.g. Thalassery Town, Kannur", ml: "ഉദാ: ടൗൺ, ജില്ല" },
+  placeLandmarkTownTalk: { en: "e.g. Beach road, Temple premises", ml: "ഉദാ: ബീച്ച് റോഡ്, ക്ഷേത്രം" },
+  
+  // Resolution & Sub-types
+  subTypeLabel: { en: "Type", ml: "വിഭാഗം" },
+  selectSubType: { en: "Specify Type", ml: "വിവരം തിരഞ്ഞെടുക്കുക" },
+  urgencyLabel: { en: "Urgency", ml: "ആവശ്യകത" },
+  selectUrgency: { en: "Priority Level", ml: "മുൻഗണന" },
+  contactModeLabel: { en: "Contact Via", ml: "ബന്ധപ്പെടാൻ" },
+  contactPhoneLabel: { en: "Contact Number", ml: "ഫോൺ നമ്പർ" },
+  invalidPhoneLength: { en: "Please enter a valid 10-digit number", ml: "ദയവായി 10 അക്ക ഫോൺ നമ്പർ നൽകുക" },
+  
+  subTypeBloodRequest: { en: "Blood Request", ml: "രക്തം ആവശ്യമുണ്ട്" },
+  subTypeAmbulance: { en: "Ambulance", ml: "ആംബുലൻസ്" },
+  subTypePharmacyInfo: { en: "Pharmacy Info", ml: "മരുന്ന് വിവരങ്ങൾ" },
+  subTypeElectrician: { en: "Electrician", ml: "ഇലക്ട്രീഷ്യൻ" },
+  subTypePlumber: { en: "Plumber", ml: "പ്ലംബർ" },
+  subTypeDriver: { en: "Driver", ml: "ഡ്രൈവർ" },
+  subTypeOther: { en: "Other", ml: "മറ്റുള്ളവ" },
+  subTypePowerCut: { en: "Power Cut", ml: "കറന്റ് പോയി" },
+  subTypeWaterIssue: { en: "Water Issue", ml: "വാട്ടർ അതോറിറ്റി" },
+  subTypeRoadIssue: { en: "Road Issue", ml: "റോഡ് പ്രശ്നങ്ങൾ" },
+  subTypeJobFullTime: { en: "Permanent Job", ml: "സ്ഥിര ജോലി" },
+  subTypeJobPartTime: { en: "Part-time Job", ml: "പാർട്ട് ടൈം ജോലി" },
+  subTypeGigOneTime: { en: "One-time Gig", ml: "ഒറ്റത്തവണ ജോലി" },
+
+  urgencyLow: { en: "General", ml: "സാധാരണം" },
+  urgencyMedium: { en: "Important", ml: "പ്രധാനപ്പെട്ടത്" },
+  urgencyHigh: { en: "High", ml: "ഉയർന്ന മുൻഗണന" },
+  urgencyUrgent: { en: "Urgent", ml: "അടിയന്തരം" },
+
+  modeWhatsapp: { en: "WhatsApp", ml: "വാട്സാപ്പ്" },
+  modeCall: { en: "Phone Call", ml: "ഫോൺ കോൾ" },
+  modeInApp: { en: "In-App Chat", ml: "നാട്ടുഫീഡ് ചാറ്റ്" },
+
+  markResolved: { en: "Resolved", ml: "തീർപ്പാക്കി" },
+  resolvedBadge: { en: "Resolved", ml: "തീർപ്പാക്കി" },
+  stillOngoing: { en: "Still Ongoing", ml: "തുടരുന്നു" },
+  markAsFilled: { en: "Mark as Filled", ml: "ജോലി ലഭിച്ചു" },
+  salaryLabel: { en: "Monthly Salary", ml: "പ്രതിമാസ ശമ്പളം" },
+  budgetLabel: { en: "Gig Budget", ml: "പ്രതിഫലം" },
+  postIntentTitle: { en: "What kind of update is this?", ml: "ഇത് ഏതുതരം പോസ്റ്റ് ആണ്?" },
+  postIntentLive: { en: "Live Issue (Needs Tracking)", ml: "പ്രശ്നപരിഹാരം വരെ തുടരുന്നു" },
+  postIntentInfo: { en: "General Info (No Updates)", ml: "അറിവിലേക്കായി മാത്രം" },
+  resolvedAt: { en: "Resolved {time}", ml: "{time} തീർപ്പാക്കി" },
+  authorActionTitle: { en: "Update Status", ml: "നിലവിലെ അവസ്ഥ" },
+  actionNeeded: { en: "Action Needed", ml: "തുടരുന്നു" },
+  activeReports: { en: "Active Reports", ml: "സജീവ റിപ്പോർട്ടുകൾ" },
+  pulseBannerTitle: { en: "Active Reports Needing Update", ml: "നിങ്ങളുടെ റിപ്പോർട്ടുകൾ ശ്രദ്ധിക്കൂ" },
+  pulseBannerText: { en: "Update your active status to earn more Karma!", ml: "കൂടുതൽ പോയിന്റുകൾക്കായി നിലവിലെ അവസ്ഥ പുതുക്കുക!" },
+  goLabel: { en: "GO", ml: "തുടങ്ങുക" },
+  pulseBannerBody: { en: "You have {count} reports in {cats} that neighbors are watching. Please update or resolve them!", ml: "{cats} വിഭാഗങ്ങളിൽ മാറ്റങ്ങൾ വന്നിട്ടുണ്ടെങ്കിൽ അത് രേഖപ്പെടുത്തുകയോ 'തീർപ്പാക്കി' എന്ന് മാറ്റുകയോ ചെയ്യുക!" },
+  viewMyPosts: { en: "Manage My Posts", ml: "എന്റെ പോസ്റ്റുകൾ നോക്കാം" },
+  
+  viewModeGrid: { en: "Grid", ml: "ഗ്രിഡ്" },
+  viewModeList: { en: "List", ml: "ലിസ്റ്റ്" },
   
   // Bus Spott / Virtual Radar
-  towardsCity: { en: "Heading to City", ml: "നഗരത്തിലേക്ക്" },
-  towardsVillage: { en: "Heading to Village", ml: "നാട്ടിലേക്ക്" },
+  towardsCity: { en: "Heading to Town", ml: "ടൗണിലേക്ക്" },
+  towardsTown: { en: "Towards Town", ml: "പട്ടണത്തിലേക്ക്" },
+  towardsVillage: { en: "Towards Village", ml: "നാട്ടിലേക്ക്" },
+  towards: { en: "Towards", ml: "ലക്ഷ്യം:" },
+  destination: { en: "Destination", ml: "ലക്ഷ്യസ്ഥാനം:" },
+  snapHeadingCity: { en: "Towards Town", ml: "ടൗണിലേക്ക്" },
+  snapHeadingVillage: { en: "Towards Village", ml: "നാട്ടിലേക്ക്" },
+  snapHeadingMajorDist: { en: "Major District", ml: "പ്രധാന കേന്ദ്രത്തിലേക്ക്" },
+  snapHeadingReturnRoute: { en: "Return Route", ml: "മടക്കയാത്ര" },
+  quickSnapTitle: { en: "Quick Radar", ml: "ക്വിക്ക് റഡാർ" },
+  switchToManual: { en: "Switch to Manual Form", ml: "മാനുവൽ ഫോം" },
+  predictedDirection: { en: "Predicted Direction", ml: "ഉദ്ദേശിച്ച ദിശ" },
   routeLabel: { en: "Bus Name or Route", ml: "ബസ് പേര് അല്ലെങ്കിൽ റൂട്ട്" },
   enterRouteName: { en: "e.g. Kannur-Azhikode, Limited Stop", ml: "ഉദാ: കണ്ണൂർ-അഴീക്കോട്" },
   spottAbus: { en: "Spott a Bus", ml: "ബസ് എവിടെയാണ്?" },
   directionLabel: { en: "Direction", ml: "ദിശ" },
   busRadarMode: { en: "Bus Radar", ml: "ബസ് റഡാർ" },
+  busColorLabel: { en: "Bus Color", ml: "ബസ്സിന്റെ നിറം" },
+  snapKSRTCFast: { en: "Red: Fast Passenger", ml: "ഫാസ്റ്റ് പാസഞ്ചർ" },
+  snapKSRTCOrd: { en: "White: KSRTC Ordinary", ml: "ഓർഡിനറി" },
+  snapKSRTCSwift: { en: "Yellow: Swift / City Link", ml: "സ്വിഫ്റ്റ് / സിറ്റി ലിങ്ക്" },
+  snapKSRTCAC: { en: "Premium: AC Seater/Sleeper", ml: "എസി സീറ്റർ/സ്ലീപ്പർ" },
+  snapPrivateLocal: { en: "Blue: Regional Bus", ml: "റീജിയണൽ ബസ്" },
+  snapPrivateCity: { en: "Green: City Bus", ml: "സിറ്റി ബസ്" },
+  snapPrivateLS: { en: "Maroon: Limited Stop (LS)", ml: "ലിമിറ്റഡ് സ്റ്റോപ്പ്" },
+  snapHintCity: { en: "Frequent Stops", ml: "കൂടുതൽ സ്റ്റോപ്പുകൾ" },
+  snapHintRegional: { en: "Outskirts & Regional", ml: "പ്രാദേശിക സർവീസ്" },
+  snapHintLS: { en: "Limited Stops", ml: "കുറഞ്ഞ സ്റ്റോപ്പുകൾ" },
+  snapHintOrd: { en: "KSRTC Local", ml: "ഓർഡിനറി സർവീസ്" },
+  snapHintFast: { en: "Inter-city Express", ml: "ഫാസ്റ്റ് പാസഞ്ചർ" },
+  snapHintSwift: { en: "High-tech City Link", ml: "ഹൈടെക് സർവീസ്" },
+  snapHintPremium: { en: "Long Distance AC", ml: "പ്രീമിയം സർവീസ്" },
+  searchByRoute: { en: "Search Route", ml: "റൂട്ട് തിരയുക" },
+  busTypePrivateLS: { en: "Limited Stop (LS)", ml: "ലിമിറ്റഡ് സ്റ്റോപ്പ്" },
+  busTypePrivateCity: { en: "City Bus", ml: "സിറ്റി ബസ്" },
+  busTypePrivateLocal: { en: "Local", ml: "ലോക്കൽ" },
+  busTypeKSRTCOrdinary: { en: "Ordinary", ml: "ഓർഡിനറി" },
+  busTypeKSRTCFast: { en: "Fast Passenger", ml: "ഫാസ്റ്റ് പാസഞ്ചർ" },
+  busTypeKSRTCSwift: { en: "Swift", ml: "സ്വിഫ്റ്റ്" },
+  busTypeKSRTCAC: { en: "AC Premium", ml: "എസി പ്രീമിയം" },
+  busCategoryKSRTC: { en: "KSRTC", ml: "കെ.എസ്.ആർ.ടി.സി" },
+  busCategoryPrivate: { en: "Private Bus", ml: "പ്രൈവറ്റ് ബസ്" },
   otherTrafficMode: { en: "Other Issues", ml: "മറ്റ് റിപ്പോർട്ടുകൾ" },
   away: { en: "away", ml: "ദൂരെ" },
   minsAgo: { en: "{mins}m ago", ml: "{mins} മിനിറ്റ് മുൻപ്" },
@@ -190,13 +357,13 @@ const translations: Record<string, Record<Language, string>> = {
   spottedBy: { en: "Spotted by", ml: "വിവരം നൽകിയത്" },
   distance: { en: "Distance", ml: "ദൂരം" },
   status: { en: "Status", ml: "നില" },
-  tooFarToVerify: { en: "You must be near the bus to verify!", ml: "ബസ് ശരിവെക്കാൻ നിങ്ങൾ അതിനടുത്ത് ഉണ്ടായിരിക്കണം!" },
+  tooFarToVerify: { en: "Are you near the bus? Move a bit closer to verify this snap! 🚌", ml: "ബസ് ശരിവെക്കാൻ നിങ്ങൾ അതിനടുത്തായിരിക്കണം! 🚌" },
   tooFarFromRoad: { en: "We don't know this stop! Help us by naming it below.", ml: "ഈ സ്റ്റോപ്പ് മാപ്പിൽ ഇല്ല! ഇത് ചേർക്കാനായി താഴെ പേര് നൽകുക." },
   suggestStop: { en: "ADD STOP TO MAP", ml: "സ്റ്റോപ്പ് മാപ്പിലേക്ക് ചേർക്കാം" },
   suggestionNote: { en: "Once added, everyone will be able to radar buses here! 🚀", ml: "നിങ്ങൾ ഇത് ചേർത്താൽ മറ്റുള്ളവർക്കും ഇവിടെ റഡാർ ലഭ്യമാകും! 🚀" },
   suggestStopTitle: { en: "Add to Map 📍", ml: "മാപ്പിലേക്ക് ചേർക്കാം 📍" },
-  commonRoutesLabel: { en: "Bus Stop Name", ml: "സ്റ്റോപ്പിന്റെ പേര്" },
-  commonRoutesHint: { en: "e.g. Town Hospital Stop", ml: "ഉദാ: ടൗൺ ഹോസ്പിറ്റൽ സ്റ്റോപ്പ്" },
+  commonRoutesLabel: { en: "Routes (e.g. To Town)", ml: "റൂട്ടുകൾ (ഉദാ: ടൗണിലേക്ക്)" },
+  commonRoutesHint: { en: "e.g. To Town, To Caltex, Limited Stop", ml: "ഉദാ: ടൗണിലേക്ക്, കാൽടെക്സ്, ലിമിറ്റഡ് സ്റ്റോപ്പ്" },
   stopSuggested: { en: "Spot suggested! Community will verify soon.", ml: "വിവരം രേഖപ്പെടുത്തി! വൈകാതെ തന്നെ എല്ലാവർക്കും ലഭ്യമാകും." },
   verifyingSpot: { en: "Sending suggestion...", ml: "വിവരം അയക്കുന്നു..." },
   timingStatus: { en: "Bus Timing", ml: "ബസ് സമയം" },
@@ -204,10 +371,14 @@ const translations: Record<string, Record<Language, string>> = {
   timingDelayed: { en: "Delayed", ml: "വൈകുന്നു" },
   timingJustMissed: { en: "Just Missed", ml: "ഇപ്പോൾ പോയി" },
   postingFrom: { en: "Posting from", ml: "ഇവിടെ നിന്ന്:" },
-  atStop: { en: "at {stop}", ml: "{stop}-ൽ" },
+  atStop: { en: "A bus was spotted at {stop}", ml: "{stop}-ൽ ഒരു ബസ് കണ്ടു" },
 
   // Post Actions
-  meToo: { en: "Me Too", ml: "ശരിയാണ്" },
+  meToo: { en: "I SEE IT TOO", ml: "ഞാനും കണ്ടു" },
+  stillHere: { en: "STILL HERE", ml: "ഇപ്പോഴും ഇവിടെയുണ്ട്" },
+  radarHelpTitle: { en: "Neighbor Radar", ml: "അയൽപക്ക റഡാർ" },
+  radarHelpDesc: { en: "A bus was spotted by a neighbor. Tap if you see it too!", ml: "ഈ ബസ് നിങ്ങളും കാണുന്നുണ്ടെങ്കിൽ താഴെ ടാപ്പ് ചെയ്യുക!" },
+  radarStillHerePrompt: { en: "Still at the stop? Tap the button below to refresh this bus for others!", ml: "നിങ്ങൾ ഇപ്പോഴും ബസ് സ്റ്റോപ്പിലാണെങ്കിൽ വിവരം പുതുക്കാൻ താഴെ ടാപ്പ് ചെയ്യുക!" },
   verified: { en: "Verified", ml: "ശരിവെച്ചു" },
   report: { en: "Report", ml: "റിപ്പോർട്ട്" },
   delete: { en: "Delete", ml: "ഒഴിവാക്കുക" },
@@ -224,6 +395,8 @@ const translations: Record<string, Record<Language, string>> = {
   deleteSuccess: { en: "Deleted successfully.", ml: "ഒഴിവാക്കി." },
   deleteFail: { en: "Deletion failed.", ml: "ഒഴിവാക്കാൻ കഴിഞ്ഞില്ല." },
   ago: { en: "{time} ago", ml: "{time} മുൻപ്" },
+  verifiedWitness: { en: "Verified Witness", ml: "വിശ്വാസയോഗ്യം" },
+  highConfidence: { en: "High Confidence", ml: "മികച്ച വിശ്വാസ്യത" },
   plus1Karma: { en: "+1 Karma", ml: "+1 കർമ്മ" },
 
   // Leaderboard
@@ -264,46 +437,50 @@ const translations: Record<string, Record<Language, string>> = {
   districtLevel: { en: "{district} Level", ml: "{district} നിലവാരം" },
   keralaLevel: { en: "Kerala Level", ml: "കേരള നിലവാരം" },
   pioneerMode: { en: "Pioneer Mode", ml: "പയനിയർ മോഡ്" },
-  lonelyLeaderTitle: { en: "It's lonely at the top! 👑", ml: "തലപ്പത്ത് ഒറ്റയ്ക്കാണോ? 👑" },
+  lonelyLeaderTitle: { en: "It's lonely at the top!", ml: "തലപ്പത്ത് ഒറ്റയ്ക്കാണോ?" },
   lonelyLeaderDesc: { en: "You are the current #1 in {district}! Invite your neighbors to join the race and see who can catch up.", ml: "നിലവിൽ {district}-ൽ നിങ്ങളാണ് ഒന്നാമത്! ഈ മത്സരത്തിൽ പങ്കുചേരാൻ നിങ്ങളുടെ അയൽക്കാരെയും സുഹൃത്തുക്കളെയും ക്ഷണിക്കൂ." },
-  inviteNeighbors: { en: "Invite Neighbors", ml: "അയൽക്കാരെ ക്ഷണിക്കൂ" },
-  shareText: { en: "I'm the current #1 in {district} on NattuFeed! 🏆 Think you can beat my Karma? Join our neighborhood hub and let's see: {url}", ml: "നട്ടുഫീഡിൽ {district}-ൽ നിലവിൽ ഞാനാണ് ഒന്നാമത്! 🏆 എന്റെ കർമ്മ പോയിന്റുകൾ മറികടക്കാൻ ആർക്കെങ്കിലും സാധിക്കുമോ? നമുക്ക് നോക്കാം: {url}" },
+  shareText: { en: "I'm the current #1 in {district} on NattuFeed! Think you can beat my Karma? Join our neighborhood hub and let's see: {url}", ml: "നട്ടുഫീഡിൽ {district}-ൽ നിലവിൽ ഞാനാണ് ഒന്നാമത്! എന്റെ കർമ്മ പോയിന്റുകൾ മറികടക്കാൻ ആർക്കെങ്കിലും സാധിക്കുമോ? നമുക്ക് നോക്കാം: {url}" },
   unlockLocalRanking: { en: "Set neighborhood to unlock local rankings!", ml: "ലോക്കൽ റാങ്കിംഗ് കാണാൻ പ്രദേശം തിരഞ്ഞെടുക്കൂ!" },
   setNeighborhood: { en: "Set Neighborhood", ml: "പ്രദേശം നൽകുക" },
   viewingKeralaDesc: { en: "You are currently viewing all-Kerala rankings. Complete your profile to see how you rank in your local district!", ml: "നിങ്ങൾ ഇപ്പോൾ കാണുന്നത് കേരള റാങ്കിംഗ് ആണ്. നിങ്ങളുടെ പ്രദേശം സെറ്റ് ചെയ്താൽ ലോക്കൽ റാങ്കിംഗ് കാണാം!" },
   // Guide & Help Center
-  guideTitle: { en: "Community Guide 📖", ml: "നാട്ടുകാരുടെ വഴികാട്ടി 📖" },
-  guideSub: { en: "Everything you need to know about NattuFeed.", ml: "നമ്മുടെ ആപ്പിനെക്കുറിച്ച് അറിയേണ്ടതെല്ലാം." },
-  
-  // Section: Radar Detail
-  howToRadar: { en: "How to Bus Radar 🚌", ml: "റഡാർ എങ്ങനെ ഉപയോഗിക്കാം? 🚌" },
-  radarExplanation: { en: "NattuFeed turns neighbors into 'Sensors'. When you spot a bus, you report it so others don't have to wait blindly at the stop.", ml: "ബസ് കാണുമ്പോൾ സമയം അറിയിക്കുന്നതിലൂടെ മറ്റുള്ളവരുടെ കാത്തിരിപ്പ് ഒഴിവാക്കാൻ നമുക്ക് സാധിക്കും." },
-  radarStep1: { en: "Go near a verified stop (within 300m).", ml: "സ്റ്റോപ്പിന് 300 മീറ്റർ ചുറ്റളവിൽ എത്തുക." },
-  radarStep2: { en: "Select 'Traffic' ➔ 'Bus' in the post menu.", ml: "പോസ്റ്റ് മെനുവിൽ 'Traffic' ➔ 'Bus' തിരഞ്ഞെടുക്കുക." },
-  radarStep3: { en: "Choose the timing (On Time, Delayed, or Missed).", ml: "സമയം (On Time, Delayed, Missed) തിരഞ്ഞെടുക്കുക." },
-  radarExpiryNote: { en: "Radar posts expire after 20 minutes to keep the data fresh.", ml: "വിവരങ്ങൾ കൃത്യമായിരിക്കാൻ 20 മിനിറ്റിന് ശേഷം ഇവ തനിയെ നീക്കം ചെയ്യപ്പെടും." },
-
-  // Section: Karma Detail
-  whyKarma: { en: "The Karma System ✨", ml: "എന്താണ് കർമ്മ പോയിന്റ്? ✨" },
-  karmaExplanation: { en: "Karma represents your contribution to the community. Higher Karma unlocks trust and higher ranking.", ml: "നിങ്ങൾ സമൂഹത്തിന് നൽകുന്ന സഹായത്തിന്റെ അടയാളമാണ് കർമ്മ. കൂടുതൽ പോയിന്റുകൾ നിങ്ങളെ നാട്ടിലെ താരമാക്കുന്നു." },
-  earnKarma1: { en: "+1 for any helpful neighborhood update.", ml: "ഓരോ പോസ്റ്റിനും +1 കർമ്മ ലഭിക്കും." },
-  earnKarma2: { en: "+2 for verifiable Bus Radar entries.", ml: "ഓരോ റഡാർ എൻട്രിക്കും +2 കർമ്മ ലഭിക്കും." },
-  earnKarma3: { en: "+1 when others 'Verify' your update.", ml: "മറ്റുള്ളവർ നിങ്ങളുടെ പോസ്റ്റ് ശരിവെക്കുമ്പോൾ +1 ലഭിക്കും." },
-
-  // Section: Categories Detail
-  whatToPost: { en: "What to Post? 📢", ml: "എന്താണ് പോസ്റ്റ് ചെയ്യേണ്ടത്? 📢" },
-  catTrafficDesc: { en: "Accidents, blocks, or bus updates.", ml: "അപകടങ്ങൾ, ബ്ലോക്കുകൾ, അല്ലെങ്കിൽ ബസ് വിവരങ്ങൾ." },
-  catUtilityDesc: { en: "Power cuts, water issues, or KSEB work.", ml: "കറന്റ് കട്ട്, പൈപ്പ് പൊട്ടൽ മുതലായവ." },
-  catMarketDesc: { en: "Daily prices, fresh arrivals, or local sales.", ml: "മാർക്കറ്റ് വിലകൾ, മറ്റു കച്ചവട വിവരങ്ങൾ." },
-  catAlertsDesc: { en: "Urgent warnings, strikes, or health alerts.", ml: "അത്യാവശ്യ മുന്നറിയിപ്പുകൾ, സമരങ്ങൾ മുതലായവ." },
-
-  // Section: Moderation
-  beSafe: { en: "Community Rules 🛡️", ml: "സമൂഹത്തിലെ നിയമങ്ങൾ 🛡️" },
-  safetyExplanation: { en: "We use a neighborhood-watch system. 5 reports will automatically hide a post for review.", ml: "തെറ്റായ വിവരങ്ങൾ നൽകരുത്. 5 റിപ്പോർട്ടുകൾ ലഭിച്ചാൽ പോസ്റ്റ് തനിയെ ഒഴിവാക്കപ്പെടും." },
-
-  getStarted: { en: "Back to Feed", ml: "തിരികെ ഹോമിലേക്ക്" },
   readGuide: { en: "New here? Read our Guide", ml: "പുതിയ അംഗമാണോ? വഴികാട്ടി വായിക്കൂ" },
   helpCenter: { en: "Help Center", ml: "സഹായ കേന്ദ്രം" },
+
+  // ── New Guided Masterclass Strings ──
+  guide: {
+    heroTitle: { en: "NattuFeed 101", ml: "നാട്ടുഫീഡ് പഠിക്കാം" },
+    heroSub: { en: "Master the hyperlocal radar and own your neighborhood.", ml: "നമ്മുടെ നാടിന്റെ സ്പന്ദനങ്ങൾ ഇനി നിങ്ങളുടെ വിരൽത്തുമ്പിൽ." },
+    
+    // Section 1: Bus Radar
+    radarTitle: { en: "1. The Live Bus Radar", ml: "1. ലൈവ് ബസ് റഡാർ" },
+    radarDesc: { en: "Radaring is how you alert your town about live bus movements. It stays active for 30 minutes to ensure real-time accuracy.", ml: "ബസ് എവിടെയാണെന്ന് എല്ലാവരെയും അറിയിക്കുന്ന സംവിധാനമാണിത്. കൃത്യത ഉറപ്പാക്കാൻ 30 മിനിറ്റ് മാത്രമേ ഈ വിവരം നിലനിൽക്കുകയുള്ളൂ." },
+    quickSnapTitle: { en: "Quick Snap (1-Second Mode)", ml: "ക്വിക്ക് സ്നാപ്പ് (ഒരു സെക്കൻഡ് മോഡ്)" },
+    quickSnapDesc: { en: "Just 4 buttons. Tap 'KSRTC' or 'Private', then choose the direction. Perfect for reporting while boarding.", ml: "കെ.എസ്.ആർ.ടി.സിയോ പ്രൈവറ്റോ എന്ന് തിരഞ്ഞെടുത്ത് ദിശ കൂടി ടാപ്പ് ചെയ്യുക. തിരക്കിനിടയിലും എളുപ്പത്തിൽ ഉപയോഗിക്കാം." },
+    manualModeTitle: { en: "Manual Mode", ml: "മാനുവൽ മോഡ്" },
+    manualModeDesc: { en: "Use this to search for specific route names or when you have more time to provide detail.", ml: "കൂടുതൽ വിവരങ്ങൾ നൽകാനും റൂട്ട് സെർച്ച് ചെയ്യാനും മാനുവൽ മോഡ് ഉപയോഗിക്കാം." },
+
+    // Section 2: Witnessing
+    witnessTitle: { en: "2. The 'Me Too' Power", ml: "2. 'ഞാനും കണ്ടു!' (Me Too)" },
+    witnessDesc: { en: "See a bus update in the feed? Tap 'Me Too' to verify it. Each witness refreshes the 30-minute timer and builds massive trust.", ml: "മറ്റൊരാൾ ഇട്ട വിവരം ശരിയാണെങ്കിൽ 'Me Too' എന്ന് ടാപ്പ് ചെയ്യുക. ഇത് ആ വിവരത്തിന്റെ സമയം 30 മിനിറ്റ് കൂടി നീട്ടുകയും കൂടുതൽ പേർക്ക് ഉപകാരപ്പെടുകയും ചെയ്യും." },
+
+    // Section 3: Verified Anchors
+    anchorTitle: { en: "3. Verified Anchors & GPS", ml: "3. വെരിഫൈഡ് ആങ്കറുകൾ" },
+    anchorDesc: { en: "Quick Radar only unlocks when you are near a verified bus stop. This ensures that every report is tied to a physical location.", ml: "നിങ്ങൾ ഒരു ബസ് സ്റ്റോപ്പിന് സമീപമാണെങ്കിൽ മാത്രമേ 'ക്വിക്ക് റഡാർ' പ്രവർത്തിക്കുകയുള്ളൂ. ഇത് വിവരങ്ങളുടെ കൃത്യത ഉറപ്പാക്കുന്നു." },
+
+    // Section 4: Hyperlocal Economy
+    economyTitle: { en: "4. Hyperlocal Economy", ml: "4. നമ്മുടെ നാട്, നമ്മുടെ വിപണി" },
+    economyDesc: { en: "NattuFeed goes beyond buses. Use it to power your local life.", ml: "ബസ് വിവരങ്ങൾ മാത്രമല്ല, നാട്ടിലെ വിപണിയും ഇനി നമുക്കറിയാം." },
+    gigsJobsTitle: { en: "Gigs & Jobs", ml: "ജോലികൾ & ഗിഗ്ഗ്സ്" },
+    gigsJobsDesc: { en: "Find local help for daily tasks or search for job openings in neighborhood shops.", ml: "നാട്ടിലെ കടകളിലെ ഒഴിവുകളും മറ്റ് ജോലികളും ഇവിടെ കണ്ടെത്താം." },
+    marketTitle: { en: "Local Marketplace", ml: "നാട്ടു വിപണി" },
+    marketDesc: { en: "Buy or sell items within the community. Report daily fish/veggie prices to keep neighbors savvy.", ml: "നാട്ടുവിപണിയിൽ സാധനങ്ങൾ വാങ്ങാനും വിൽക്കാനും വിലവിവരങ്ങൾ പങ്കുവെക്കാനും സാധിക്കും." },
+
+    // Section 5: Trust & Karma
+    karmaTitle: { en: "5. Trust & Karma", ml: "5. വിശ്വാസ്യതയും കർമ്മയും" },
+    karmaDesc: { en: "Your accuracy is your rank. Earn +2 Karma for every Snap and +1 for every Verification.", ml: "ഓരോ റിപ്പോർട്ടിനും +2 പോയിന്റും, വിവരങ്ങൾ ശരിവെക്കുന്നതിന് +1 പോയിന്റും ലഭിക്കും. കൂടുതൽ പോയിന്റുകൾ നിങ്ങളെ വിശ്വസ്തനായ അംഗമാക്കും." },
+    safetyWarning: { en: "Safety First: Never use the app while driving or riding. Your safety is more important than a bus report.", ml: "ശ്രദ്ധിക്കുക: വാഹനം ഓടിക്കുമ്പോൾ ആപ്പ് ഉപയോഗിക്കരുത്. നിങ്ങളുടെ സുരക്ഷയാണ് പ്രധാനം." },
+  },
 
   // Profile / Settings
   myProfile: { en: "My Profile", ml: "എന്റെ പ്രൊഫൈൽ" },
@@ -315,6 +492,9 @@ const translations: Record<string, Record<Language, string>> = {
   wardLabel: { en: "Ward", ml: "വാർഡ്" },
   editProfile: { en: "Edit Profile", ml: "പ്രൊഫൈൽ മാറ്റുക" },
   updateIdentity: { en: "Update your neighborhood identity", ml: "നിങ്ങളുടെ പ്രൊഫൈൽ വിവരങ്ങൾ മാറ്റുക" },
+  removePhoto: { en: "Remove Photo", ml: "ഫോട്ടോ നീക്കം ചെയ്യുക" },
+  currentPhoto: { en: "Current Photo", ml: "നിലവിലെ ഫോട്ടോ" },
+  usingDefaultAvatar: { en: "Using Default Avatar", ml: "ഡിഫോൾട്ട് അവതാർ ഉപയോഗിക്കുന്നു" },
 
   // Age Groups
   selectAgeTitle: { en: "Which group describes you?", ml: "നിങ്ങളുടെ പ്രായം എത്രയാണ്?" },
@@ -322,7 +502,7 @@ const translations: Record<string, Record<Language, string>> = {
   ageYoungAdult: { en: "Young Adult (18-35)", ml: "18-35 വയസ്സ്" },
   ageMiddleAge: { en: "Middle Age (36-60)", ml: "36-60 വയസ്സ്" },
   ageSenior: { en: "Senior (60+)", ml: "60 വയസ്സിന് മുകളിൽ" },
-  optionalLabel: { en: "(Optional)", ml: "(നിർബന്ധമില്ല)" },
+
   ageGroup: { en: "Age Group", ml: "പ്രായപരിധി" },
   locationTrustNote: { en: "Precise locations build community trust.", ml: "വാർത്തകൾ വിശ്വസനീയമാകാൻ കൃത്യമായ പ്രദേശം നൽകുക." },
   profileIdentityBonus: { en: "Complete profile for +10 KarmaPoints.", ml: "പ്രൊഫൈൽ പൂർത്തിയാക്കിയാൽ 10 പോയിന്റുകൾ ലഭിക്കും." },
@@ -335,7 +515,6 @@ const translations: Record<string, Record<Language, string>> = {
   directChat: { en: "Direct chat with founder", ml: "നേരിട്ട് സംസാരിക്കുക" },
   locating: { en: "Locating...", ml: "സ്ഥാനം കണ്ടെത്തുന്നു..." },
   lowAccuracyRadar: { en: "High-accuracy GPS (Mobile) is required for Bus Radar to prevent fake reports.", ml: "വ്യാജ റിപ്പോർട്ടുകൾ ഒഴിവാക്കാൻ ബസ് രാഡാർ ഉപയോഗിക്കാൻ കൃത്യമായ ജിപിഎസ് (മൊബൈൽ) ആവശ്യമാണ്." },
-  gpsLocked: { en: "High-Accuracy GPS Locked. Ready to Radar.", ml: "ജിപിഎസ് ലൊക്കേഷൻ ഉറപ്പുവരുത്തി. ബസ് രാഡാർ അയക്കാൻ തയ്യാറാണ്." },
   feedbackPlaceholder: { en: "What's on your mind? Suggestions, bugs...", ml: "എന്തെങ്കിലും നിർദ്ദേശങ്ങൾ, പരാതികൾ ഉണ്ടോ?" },
   sendToWhatsApp: { en: "Send via WhatsApp", ml: "വാട്സാപ്പ് വഴി അയക്കുക" },
   guardianTitle: { en: "NattuFeed Sentinel", ml: "നട്ടുഫീഡിന്റെ കാവലാൾ" },
@@ -396,7 +575,13 @@ const translations: Record<string, Record<Language, string>> = {
   saving: { en: "Saving...", ml: "സംരക്ഷിക്കുന്നു..." },
   finish: { en: "Finish Setup", ml: "പൂർത്തിയാക്കുക" },
   outsideKerala: { en: "Outside Kerala", ml: "കേരളത്തിന് പുറത്ത്" },
-  keralaOnlyRequirement: { en: "NattuFeed is currently only available for users physically within Kerala.", ml: "നട്ടുഫീഡ് നിലവിൽ കേരളത്തിലുള്ളവർക്ക് മാത്രമേ ലഭ്യമാകൂ." },
+  keralaOnlyRequirement: { en: "NattuFeed is for our Kerala neighbors! We'll be in your area soon. 🌴", ml: "നാട്ടുഫീഡ് നിലവിൽ കേരളത്തിലുള്ളവർക്ക് മാത്രമേ ലഭ്യമാകൂ. ഞങ്ങൾ ഉടൻ നിങ്ങളുടെ നാട്ടിലും എത്തും! 🌴" },
+  detectingLocation: { en: "Detecting your neighborhood...", ml: "നിങ്ങളുടെ പ്രദേശം കണ്ടെത്തുന്നു..." },
+  detectingLocationSub: { en: "Using GPS to find your area", ml: "GPS ഉപയോഗിച്ച് പ്രദേശം കണ്ടെത്തുന്നു" },
+  locationDetected: { en: "Location Detected", ml: "സ്ഥലം കണ്ടെത്തി" },
+  yesThatsMe: { en: "Confirm Location", ml: "ഈ സ്ഥലം ശരിയാണ്" },
+  changeLocation: { en: "Change", ml: "മാറ്റുക" },
+  expandedAreaNotice: { en: "Showing updates from nearby — your area is quiet right now", ml: "സമീപ പ്രദേശങ്ങളിൽ നിന്നുള്ള വാർത്തകൾ കാണിക്കുന്നു — നിങ്ങളുടെ ഭാഗത്ത് ഇപ്പോൾ ശാന്തമാണ്" },
 
   // Privacy Sections
   privacyCollectTitle: { en: "What We Collect", ml: "ശേഖരിക്കുന്ന വിവരങ്ങൾ" },
@@ -461,6 +646,9 @@ const translations: Record<string, Record<Language, string>> = {
   termsLiability2: { en: "Our liability is limited to the maximum extent permitted by applicable Indian law.", ml: "നിയമപരമായ പരിധികൾക്ക് ഉള്ളിൽ മാത്രമേ ഞങ്ങളുടെ ഉത്തരവാദിത്തം ഉണ്ടായിരിക്കുകയുള്ളൂ." },
   termsLiability3: { en: "These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in Kannur, Kerala.", ml: "ഈ നിബന്ധനകൾ ഇന്ത്യൻ നിയമങ്ങൾക്ക് വിധേയമാണ്. പരാതികൾ കണ്ണൂർ കോടതിയുടെ പരിധിയിൽ മാത്രമായിരിക്കും." },
   termsLiability4: { en: "We may update these terms from time to time.", ml: "കാലാകാലങ്ങളിൽ ഈ നിബന്ധനകളിൽ മാറ്റം വരുത്താൻ ഞങ്ങൾക്ക് അവകാശമുണ്ട്" },
+  termsLiabilityTransit: { en: "Bus Radar data is crowdsourced and may be inaccurate. No liability is accepted for missed transit, schedule changes, or financial loss.", ml: "ബസ് വിവരങ്ങൾ നാട്ടുകാർ നൽകുന്നതാണ്. വിവരങ്ങളിൽ മാറ്റം വരാം, അതിനാൽ ബസ് മിസ്സ് ആയാൽ കമ്പനി ഉത്തരവാദിയല്ല." },
+  termsLiabilityServices: { en: "NattuFeed provides a platform for Gigs & Jobs only. We do not screen users or guarantee the quality/safety of any local transactions or services.", ml: "ജോലി വിവരങ്ങൾ കണ്ടെത്താൻ മാത്രമാണിത്. ജോലിയുടെ സാഹചര്യത്തിലോ ശമ്പളത്തിലോ ഉള്ള പരാതികൾക്ക് കമ്പനി ഉത്തരവാദിയല്ല." },
+  termsLiabilitySafety: { en: "SAFETY FIRST: You must never use the NattuFeed application while operating any motorized vehicle. Your safety is more valuable than an update.", ml: "ശ്രദ്ധിക്കുക: വാഹനം ഓടിക്കുമ്പോൾ ആപ്പ് ഉപയോഗിക്കരുത്. നിങ്ങളുടെ ജീവനാണ് പ്രധാനം." },
 
   // Offline Page
   offlineTitle: { en: "You're Offline", ml: "നിങ്ങൾ ഓഫ്‌ലൈനാണ്" },
@@ -468,11 +656,41 @@ const translations: Record<string, Record<Language, string>> = {
   retryLabel: { en: "Try Again", ml: "വീണ്ടും ശ്രമിക്കുക" },
 
   // PWA Prompts
-  installApp: { en: "Install NattuFeed", ml: "നട്ടുഫീഡ് ഇൻസ്റ്റാൾ ചെയ്യുക" },
+  installApp: { en: "Install NattuFeed", ml: "നാട്ടുഫീഡ് ഇൻസ്റ്റാൾ ചെയ്യുക" },
   installAppDesc: { en: "Add to home screen for faster access", ml: "എളുപ്പത്തിൽ ഉപയോഗിക്കാൻ ഹോം സ്ക്രീനിലേക്ക് ചേർക്കുക" },
+  installiOS: { en: "Install NattuFeed", ml: "നാട്ടുഫീഡ് ഇൻസ്റ്റാൾ ചെയ്യുക" },
+  installiOSDesc: { en: "Add to Home Screen for a native app experience.", ml: "ഒരു നേറ്റീവ് ആപ്പ് അനുഭവത്തിനായി ഹോം സ്ക്രീനിലേക്ക് ചേർക്കുക." },
   tapShare: { en: "Tap Share", ml: "Share ടാപ്പ് ചെയ്യുക" },
   install: { en: "Install", ml: "ഇൻസ്റ്റാൾ" },
   addToHome: { en: "Add to Home", ml: "ഹോം സ്ക്രീനിലേക്ക് ചേർക്കുക" },
+  joinCommunity: { en: "Join Neighborhood Community", ml: "വാട്സാപ്പ് കമ്മ്യൂണിറ്റിയിൽ ചേരുക" },
+  joinCommunityDesc: { en: "Jump into our neighborhood WhatsApp group—it's where the real talk happens!", ml: "നമ്മുടെ നാട്ടിലെ വാർത്തകൾ വാട്സാപ്പിൽ അറിയാം" },
+  inviteNeighbors: { en: "Invite Neighbors", ml: "അയൽക്കാരെ ക്ഷണിക്കാൻ" },
+  inviteNeighborsDesc: { en: "Help a neighbor out—share the app!", ml: "നമ്മുടെ നാട്ടിലെ കൂട്ടായ്മ വർദ്ധിപ്പിക്കാം" },
+    inviteMessage: { 
+    en: "Ever feel like you're the last to know what's happening around here? I've been using NattuFeed to keep up with everything—from live bus spots to local news and urgent alerts. It's super helpful, check it out!", 
+    ml: "നമ്മുടെ നാട്ടിലെ പുതിയ മാറ്റങ്ങളും വിശേഷങ്ങളും ഇനി പെട്ടെന്ന് അറിയാം! ബസ് വിവരങ്ങൾ മുതൽ വാർത്തകളും മറ്റ് അറിയിപ്പുകളും വരെ എല്ലാം ഇപ്പോൾ 'നാട്ടുഫീഡ്'-ലൂടെ എനിക്ക് ലഭിക്കുന്നുണ്ട്. നിങ്ങൾക്കും ഇത് ഉപകാരപ്പെടുമെന്ന് തീർച്ച! ഒന്ന് നോക്കൂ:" 
+  },
+  // ── Onboarding & Guided Tour ──
+  onboarding: {
+    welcomeTitle: { en: "Welcome, Neighbor!", ml: "സ്വാഗതം, സുഹൃത്തേ!" },
+    welcomeDesc: { en: "NattuFeed is a community-driven hub. Here is how you can help.", ml: "നമ്മുടെ നാടിന്റെ വിശേഷങ്ങൾ പങ്കുവെക്കാനുള്ള ഇടമാണിത്. എങ്ങനെ സഹായിക്കാം എന്ന് നോക്കാം." },
+    stepPostTitle: { en: "Spott a Bus", ml: "ബസ് എവിടെയാണ്?" },
+    stepPostDesc: { en: "Tap here to report a live bus location for everyone.", ml: "ബസ് എവിടെയാണെന്ന് ഒരു ടാപ്പിലൂടെ എല്ലാവരെയും അറിയിക്കാം." },
+    stepFilterTitle: { en: "Town Talk & Traffic", ml: "നാട്ടുകാര്യം & ഗതാഗതം" },
+    stepFilterDesc: { en: "Switch between categories to find what matters to you.", ml: "നിങ്ങൾക്ക് ആവശ്യമുള്ള വിവരങ്ങൾ ഇവിടെ നിന്നും തിരഞ്ഞെടുക്കാം." },
+    stepVerifyTitle: { en: "Me Too!", ml: "എനിക്കും കണ്ടു!" },
+    stepVerifyDesc: { en: "See a report? Verify it to help the community stay accurate.", ml: "മറ്റൊരാൾ ഇട്ട വിവരം ശരിയാണെങ്കിൽ ഒന്ന് ഉറപ്പിക്കൂ." },
+    stepKarmaTitle: { en: "Earn Karma", ml: "കർമ്മ പോയിന്റ്സ്" },
+    stepKarmaDesc: { en: "Help neighbors to earn Karma and unlock hero badges!", ml: "മറ്റുള്ളവരെ സഹായിക്കൂ, പുതിയ ബാഡ്ജുകൾ സ്വന്തമാക്കൂ!" },
+    finishBtn: { en: "Start Helping", ml: "സഹായിച്ചു തുടങ്ങാം" },
+    skipBtn: { en: "Skip Guide", ml: "ഒഴിവാക്കുക" },
+    nextBtn: { en: "Next", ml: "അടുത്തത്" },
+    prevBtn: { en: "Previous", ml: "പുറകിലേക്ക്" },
+    viewGuideTitle: { en: "Community Guide", ml: "നാട്ടുകാരുടെ വഴികാട്ടി" },
+    viewGuideDesc: { en: "Everything you need to know", ml: "എല്ലാം ഇവിടെ അറിയാം" },
+    welcomeNudge: { en: "New to NattuFeed? See how it works!", ml: "ആദ്യമായാണോ? എങ്ങനെ ഉപയോഗിക്കാം എന്ന് നോക്കാം!" }
+  },
 };
 
 interface LanguageContextType {
@@ -498,19 +716,33 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem("nattu_lang", lang);
   };
 
-  const t = (key: string, variables?: Record<string, string>) => {
-    // Robust access to handle potential edge cases
-    const entry = translations[key];
-    if (!entry) return key;
+  // Fix: sync <html lang> attribute to active language for accessibility & SEO
+  useEffect(() => {
+    document.documentElement.lang = language === "ml" ? "ml" : "en";
+  }, [language]);
+
+  const t = (key: string, variables?: Record<string, string>): string => {
+    const parts = key.split('.');
+    let root: any = translations;
     
-    let text = entry[language] || entry["en"] || key;
-    
-    if (variables) {
-      Object.entries(variables).forEach(([k, v]) => {
-        text = text.replace(`{${k}}`, v);
-      });
+    for (const part of parts) {
+      if (!root[part]) return key;
+      root = root[part];
     }
-    return text;
+
+    const val = root?.[language] || root?.en || key;
+    
+    if (typeof val === "string") {
+      let text = val;
+      if (variables) {
+        Object.entries(variables).forEach(([k, v]) => {
+          text = text.replace(`{${k}}`, v);
+        });
+      }
+      return text;
+    }
+    
+    return key;
   };
 
   return (

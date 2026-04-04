@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { isUserInKerala } from "@/utils/geofence";
 
 interface LocationState {
   lat: number | null;
@@ -23,7 +24,7 @@ export const useLocation = (): LocationState => {
 
   const getLocation = () => {
     setLocation(prev => ({ ...prev, loading: true, error: null }));
-    
+
     if (!navigator.geolocation) {
       setLocation((prev) => ({
         ...prev,
@@ -72,7 +73,7 @@ export const useLocation = (): LocationState => {
               setLocation(prev => ({ ...prev, loading: false, error: null }));
               return;
             }
-            
+
             if (lowResError.code === lowResError.PERMISSION_DENIED) {
               errorMessage = "Location access is required to show your local feed.";
             }
@@ -101,20 +102,16 @@ export const useLocation = (): LocationState => {
           lat: parseFloat(cachedLat),
           lng: parseFloat(cachedLng),
           accuracy: 5000, // Assume low accuracy for cache
-          loading: false, 
+          loading: false,
         }));
       }
-    } catch (e) {}
-    
+    } catch (e) { }
+
     getLocation();
   }, []);
 
-  const isWithinKerala = (location.lat !== null && location.lng !== null)
-    ? (
-        location.lat >= 8.2  && location.lat <= 12.85 && 
-        location.lng >= 74.7 && location.lng <= 77.55
-      )
-    : false;
+  // 🛡️ High-Fidelity Kerala Geofence Check
+  const isWithinKerala = isUserInKerala(location.lat, location.lng);
 
   return { ...location, isWithinKerala, refreshLocation: getLocation };
 };

@@ -14,21 +14,21 @@ export default function SharePost({ post, className }: SharePostProps) {
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     let message = "";
     const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://nattufeed.web.app";
     const postUrl = `${siteUrl}/post/${post.id}`;
 
     if (post.type === "bus_spott") {
-      const direction = post.details === "to_city" 
-        ? (language === "ml" ? "നഗരത്തിലേക്ക്" : "Towards City") 
+      const direction = post.details === "to_city"
+        ? (language === "ml" ? "നഗരത്തിലേക്ക്" : "Towards City")
         : (language === "ml" ? "നാട്ടിലേക്ക്" : "Towards Village");
-        
-      const statusLabel = post.timingStatus === "on_time" ? "On Time" : 
-                          post.timingStatus === "delayed" ? "Delayed" : 
-                          post.timingStatus === "just_missed" ? "Just Missed" : "";
 
-      message = language === "ml" 
+      const statusLabel = post.timingStatus === "on_time" ? "On Time" :
+        post.timingStatus === "delayed" ? "Delayed" :
+          post.timingStatus === "just_missed" ? "Just Missed" : "";
+
+      message = language === "ml"
         ? `🚌 *NattuFeed ബസ് റഡാർ*\n\n*${post.headline}*\n📍 സ്ഥലം: ${post.anchorName || "Unknown"}\n🔄 ദിശ: ${direction}\n${statusLabel ? `⏱️ സ്റ്റാറ്റസ്: ${statusLabel}\n` : ""}\nലൈവ് ട്രാക്കിംഗ് ഇവിടെ:\n${postUrl}`
         : `🚌 *NattuFeed Bus Radar*\n\n*${post.headline}*\n📍 Stop: ${post.anchorName || "Unknown"}\n🔄 Direction: ${direction}\n${statusLabel ? `⏱️ Status: ${statusLabel}\n` : ""}\nTrack live here:\n${postUrl}`;
     } else {
@@ -44,11 +44,14 @@ export default function SharePost({ post, className }: SharePostProps) {
   return (
     <button
       onClick={handleShare}
-      className={`p-2 rounded-xl text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 border border-transparent hover:border-emerald-100 transition-all active:scale-95 group ${className}`}
-      title="Share to WhatsApp"
+      className={`p-2 rounded-xl text-gray-400 hover:text-[#25D366] hover:bg-[#25D366]/10 border border-transparent hover:border-[#25D366]/20 transition-all active:scale-95 group ${className}`}
+      title={language === "ml" ? "വാട്ട്‌സ്ആപ്പിൽ പങ്കിടുക" : "Share to WhatsApp"}
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <Share2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+        <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline group-hover:text-[#25D366]">
+          {language === "ml" ? "പങ്കിടുക" : "Share"}
+        </span>
       </div>
     </button>
   );

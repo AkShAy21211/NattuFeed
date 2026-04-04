@@ -15,23 +15,30 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
 
-  // Define public routes that don't need authentication
-  const publicPaths = ["/login", "/privacy", "/terms"];
-  const isPublicPath = publicPaths.includes(pathname);
+  // These pages ALWAYS require a logged-in user.
+  const protectedPaths = ["/profile", "/leaderboard", "/settings"];
+  const isProtectedPath = protectedPaths.some(p => pathname.startsWith(p));
+  
+  // Login page should not show skeletons
+  const isLoginPage = pathname === "/login";
 
-  // If auth is loading, show a skeleton instead of the page content
-  if (loading && !isPublicPath) {
-    return (
-      <div className="pb-24">
-        <div className="h-28 bg-white border-b border-gray-100 animate-pulse" />
-        <PostFeedSkeleton />
-      </div>
-    );
+  // If auth is loading, and we're on a protected path, show skeleton
+  if (loading && (isProtectedPath || !isLoginPage)) {
+    // Note: We show skeleton for the root feed during initial load too,
+    // to prevent content jump once auth initializes.
+    if (pathname === "/") {
+      return (
+        <div className="pb-24">
+          <div className="h-28 bg-white border-b border-gray-100 animate-pulse" />
+          <PostFeedSkeleton />
+        </div>
+      );
+    }
   }
 
-  // If not loading and not authenticated (and not public), return null
-  // The AuthContext onAuthStateChanged listener will handle the push to /login
-  if (!user && !isPublicPath) {
+  // If not loading, not authenticated, AND on a protected path, return null
+  // (AuthContext will handle the redirect)
+  if (!user && isProtectedPath) {
     return null;
   }
 

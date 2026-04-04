@@ -17,8 +17,8 @@ export default function InstallPrompt() {
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Show prompt after a short delay for better UX
-      setTimeout(() => setShowPrompt(true), 3000);
+      // Show prompt after a short delay for better UX (12s for poster users)
+      setTimeout(() => setShowPrompt(true), 12000);
     };
 
     window.addEventListener("beforeinstallprompt", handler);

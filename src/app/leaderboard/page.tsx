@@ -9,7 +9,10 @@ import {
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useToast } from '@/context/ToastContext';
+import { useRouter } from 'next/navigation';
 import { endOfWeek, differenceInDays } from 'date-fns';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 interface LeaderboardUser {
   id: string;
@@ -21,45 +24,14 @@ interface LeaderboardUser {
 
 /* ─── tiny helpers ─────────────────────────────────────────────── */
 
-/** Safe initials: never crashes on empty/undefined names */
-function initials(name?: string) {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  return parts.length >= 2
-    ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-    : parts[0][0].toUpperCase();
-}
-
-/** Avatar with onError fallback so broken URLs never leave a blank square */
-function Avatar({
-  src, name, size = 'md', ring,
-}: {
-  src?: string; name: string; size?: 'sm' | 'md' | 'lg'; ring?: string;
-}) {
-  const [errored, setErrored] = useState(false);
-  const dims = { sm: 'w-11 h-11 text-xs', md: 'w-14 h-14 text-sm', lg: 'w-20 h-20 text-base' }[size];
-  const ringCls = ring ?? 'ring-2 ring-white/60';
-
-  return (
-    <div className={`${dims} ${ringCls} rounded-2xl overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center font-black text-gray-400`}>
-      {src && !errored ? (
-        <img
-          src={src} alt={name}
-          className="w-full h-full object-cover"
-          onError={() => setErrored(true)}
-        />
-      ) : (
-        <span>{initials(name)}</span>
-      )}
-    </div>
-  );
-}
 
 /* ─── main component ────────────────────────────────────────────── */
 
 export default function LeaderboardPage() {
+  const router = useRouter();
   const { user, profile } = useAuth();
   const { t } = useLanguage();
+  const { showToast } = useToast();
 
   const [topUsers, setTopUsers] = useState<LeaderboardUser[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
@@ -137,10 +109,18 @@ export default function LeaderboardPage() {
       async (snap) => {
         if (!snap.exists()) return;
         const data = snap.data();
-        const pts = data.karmaWeekly || 0;
-        const tot = data.karmaTotal || 0;
+        const pts = data.karmaWeekly ?? 0;
+        const tot = data.karmaTotal ?? 0;
         const dist = data.district || '';
+        const createdAt = data.createdAt; // Can be undefined for new users
+
         setUserWeeklyPoints(pts);
+
+        // Guard: If we don't have a timestamp yet, we can't accurately compute exact rank tie-breakers
+        if (!createdAt) {
+          setUserRank(null);
+          return;
+        }
 
         try {
           const baseQuery = query(collection(db, 'users'));
@@ -149,7 +129,7 @@ export default function LeaderboardPage() {
           const [wSnap, tSnap, sSnap] = await Promise.all([
             getCountFromServer(query(filteredQuery, where('karmaWeekly', '>', pts))),
             getCountFromServer(query(filteredQuery, where('karmaWeekly', '==', pts), where('karmaTotal', '>', tot))),
-            getCountFromServer(query(filteredQuery, where('karmaWeekly', '==', pts), where('karmaTotal', '==', tot), where('createdAt', '<', data.createdAt))),
+            getCountFromServer(query(filteredQuery, where('karmaWeekly', '==', pts), where('karmaTotal', '==', tot), where('createdAt', '<', createdAt))),
           ]);
 
           setUserRank(wSnap.data().count + tSnap.data().count + sSnap.data().count + 1);
@@ -224,8 +204,13 @@ export default function LeaderboardPage() {
       }
     } else {
       // Fallback: Copy to clipboard
-      navigator.clipboard.writeText(`${text}`);
-      alert(t('linkCopied'));
+      try {
+        await navigator.clipboard.writeText(`${text}`);
+        showToast(t('linkCopied'), "success");
+      } catch (error) {
+        console.error("Clipboard write failed:", error);
+        showToast(t('shareFailed') || "Could not copy link", "error");
+      }
     }
   };
 
@@ -257,7 +242,7 @@ export default function LeaderboardPage() {
           {t('claimSpotDesc')}
         </p>
         <button
-          onClick={() => window.location.href = '/'}
+          onClick={() => router.push('/')}
           className="bg-primary text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[2px] shadow-lg shadow-primary/20 transition-all active:scale-95"
         >
           {t('startPosting')}
@@ -320,7 +305,7 @@ export default function LeaderboardPage() {
                 {t('pioneerDesc', { district: profile.district })}
              </p>
              <button
-               onClick={() => window.location.href = '/'}
+               onClick={() => router.push('/')}
                className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md shadow-primary/20 active:scale-95 transition-all"
              >
                 <Zap className="w-3.5 h-3.5 fill-white" />
@@ -360,7 +345,7 @@ export default function LeaderboardPage() {
                 {t('viewingKeralaDesc')}
              </p>
              <button
-               onClick={() => window.location.href = '/profile'}
+               onClick={() => router.push('/profile')}
                className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-md shadow-amber-200 active:scale-95 transition-all"
              >
                 <Star className="w-3.5 h-3.5 fill-white" />
@@ -425,9 +410,11 @@ export default function LeaderboardPage() {
               </span>
 
               {/* avatar */}
-              <Avatar
-                src={item.photoURL} name={item.name} size="sm"
-                ring={isMe ? 'ring-2 ring-white/30' : 'ring-2 ring-gray-50'}
+              <ProfileAvatar
+                src={item.photoURL} 
+                name={item.name} 
+                size="sm"
+                className={isMe ? 'ring-2 ring-white/30 !rounded-2xl' : 'ring-2 ring-gray-50 !rounded-2xl'}
               />
 
               {/* name + hint */}
@@ -487,7 +474,7 @@ export default function LeaderboardPage() {
                     ? t('allKerala') 
                     : isGlobalFallback ? profile.district : profile.district}
                 </p>
-                <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 uppercase">
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 uppercase">
                   {isGlobalFallback || !profile?.district ? t('keralaLevel') : t('districtLevel', { district: profile?.district || '' })}
                 </span>
               </div>
@@ -502,7 +489,7 @@ export default function LeaderboardPage() {
               
               {!profile?.district ? (
                 <button 
-                   onClick={() => window.location.href = '/profile'}
+                   onClick={() => router.push('/profile')}
                    className="text-[9px] font-black text-amber-600 uppercase tracking-widest mt-1 underline underline-offset-2"
                 >
                   Set Neighborhood to claim Local #1
@@ -584,7 +571,12 @@ function PodiumCard({ user, rank, isMe, extraBottom }: PodiumCardProps) {
 
       {/* avatar */}
       <div className="relative mb-2">
-        <Avatar src={user.photoURL} name={user.name} size={avatarSize} ring={avatarRing} />
+        <ProfileAvatar 
+          src={user.photoURL} 
+          name={user.name} 
+          size={avatarSize} 
+          className={`${avatarRing} !rounded-2xl`} 
+        />
         {/* rank badge */}
         <span className={`
           absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-lg text-[10px] font-black

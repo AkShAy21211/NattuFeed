@@ -3,7 +3,8 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { KERALA_DISTRICTS, KERALA_LSG_DATA, District } from "@/constants/keralaData";
-import { X, Save, Loader2, User, MapPin } from "lucide-react";
+import { X, Save, Loader2, User, MapPin, Trash2 } from "lucide-react";
+import ProfileAvatar from "./ProfileAvatar";
 import { db } from "@/lib/firebase";
 import { doc, runTransaction, increment } from "firebase/firestore";
 import { useToast } from "@/context/ToastContext";
@@ -24,6 +25,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
   const [localBody, setLocalBody] = useState(profile?.localBody || "");
   const [ward, setWard] = useState(profile?.ward || "");
   const [ageGroup, setAgeGroup] = useState(profile?.ageGroup || "");
+  const [photoURL, setPhotoURL] = useState(profile?.photoURL || "");
   const [lsgSearch, setLsgSearch] = useState("");
   
   const [isUpdating, setIsUpdating] = useState(false);
@@ -36,6 +38,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
       setLocalBody(profile.localBody || "");
       setWard(profile.ward || "");
       setAgeGroup(profile.ageGroup || "");
+      setPhotoURL(profile.photoURL || "");
       setLsgSearch("");
     }
   }, [isOpen, profile]);
@@ -72,10 +75,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
             localBody,
             ward,
             ageGroup,
+            photoURL,
             onboarded: true,
             identityBonusReceived: true,
-            karmaTotal: increment(10),
-            karmaWeekly: increment(10),
+            karmaTotal: increment(5),
+            karmaWeekly: increment(5),
           });
         });
       } else {
@@ -85,6 +89,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
           localBody,
           ward,
           ageGroup,
+          photoURL,
           onboarded: true
         });
       }
@@ -119,7 +124,30 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-6">
+         <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-6">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center gap-4 py-2">
+            <div className="relative group">
+              <ProfileAvatar src={photoURL} name={name} size="xl" />
+              {photoURL && (
+                <button
+                  type="button"
+                  onClick={() => setPhotoURL("")}
+                  className="absolute -top-1 -right-1 bg-red-500 text-white p-2 rounded-xl border-2 border-white shadow-lg hover:bg-red-600 transition-all active:scale-90"
+                  title={t('removePhoto') || "Remove Photo"}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+            {photoURL ? (
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('currentPhoto') || "Current Photo"}</p>
+            ) : (
+              <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{t('usingDefaultAvatar') || "Using Default Avatar"}</p>
+            )}
+          </div>
+
+          <div className="h-px bg-gray-100 w-full" />
           {/* Name Field */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
@@ -162,7 +190,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
                       }}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                         district === d 
-                          ? "bg-emerald-600 text-white shadow-sm" 
+                          ? "bg-emerald-500 text-white shadow-sm" 
                            : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100"
                       }`}
                     >
@@ -227,7 +255,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
           {/* Age Group Field */}
           <div className="space-y-4">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-              <User size={14} className="text-blue-500" />
+              <User size={14} className="text-emerald-500" />
               {t('ageGroup')} <span className="text-[10px] text-gray-300 normal-case font-medium">{t('optionalLabel')}</span>
             </label>
             
@@ -244,7 +272,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) 
                   onClick={() => setAgeGroup(age.id)}
                   className={`px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
                     ageGroup === age.id 
-                      ? "bg-blue-600 text-white border-blue-600 shadow-sm" 
+                      ? "bg-emerald-500 text-white border-emerald-500 shadow-sm" 
                       : "bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100"
                   }`}
                 >

@@ -10,6 +10,11 @@ const withPWA = withPWAInit({
 const nextConfig: any = {
   reactCompiler: true,
   turbopack: {},
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production" ? {
+      exclude: ["error"],
+    } : false,
+  },
 };
 
 export default withPWA(nextConfig);

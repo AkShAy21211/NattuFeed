@@ -16,7 +16,7 @@ export interface Anchor {
 let cachedAnchors: Anchor[] | null = null;
 
 /**
- * Fetches verified anchors from Firestore.
+ * Fetches verified anchors from Firestore and merges them with seed data.
  */
 export const getVerifiedAnchors = async (): Promise<Anchor[]> => {
   if (cachedAnchors) return cachedAnchors;
@@ -25,10 +25,9 @@ export const getVerifiedAnchors = async (): Promise<Anchor[]> => {
     const q = query(collection(db, "bus_anchors"), where("verified", "==", true));
     const querySnapshot = await getDocs(q);
     
-    const anchors: Anchor[] = [];
+    let anchors: Anchor[] = [];
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      // Support both GeoPoint or simple lat/lng array/fields
       const lat = data.location?.latitude || data.lat;
       const lng = data.location?.longitude || data.lng;
       
@@ -42,6 +41,17 @@ export const getVerifiedAnchors = async (): Promise<Anchor[]> => {
         });
       }
     });
+
+    // Merge with Seed Data for Kannur Demo
+    try {
+      const seedData = (await import("./anchors_seed.json")).default as Anchor[];
+      // Only add seed data if not already present in Firestore (by ID)
+      const existingIds = new Set(anchors.map(a => a.id));
+      const uniqueSeedData = seedData.filter(s => !existingIds.has(s.id));
+      anchors = [...anchors, ...uniqueSeedData];
+    } catch (e) {
+      console.warn("No seed data found or error loading it.");
+    }
 
     cachedAnchors = anchors;
     return anchors;
@@ -78,4 +88,58 @@ export const isNearAnyAnchor = (lat: number, lng: number, anchors: Anchor[], buf
     const dist = calculateDistance(lat, lng, anchor.lat, anchor.lng);
     return dist <= bufferMeters;
   });
+};
+/**
+ * Fetches a single anchor by ID.
+ */
+export const getAnchorById = async (id: string): Promise<Anchor | null> => {
+  try {
+    const { doc, getDoc } = await import("firebase/firestore");
+    const docRef = doc(db, "bus_anchors", id);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const lat = data.location?.latitude || data.lat;
+      const lng = data.location?.longitude || data.lng;
+      return {
+        id: docSnap.id,
+        name: data.name,
+        lat,
+        lng,
+        routes: data.routes || []
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching anchor by ID:", error);
+    return null;
+  }
+};
+
+/**
+ * Seeds the local JSON anchors to Firestore.
+ * This is a utility function to be called once or via a hidden admin trigger.
+ */
+export const seedAnchorsToFirestore = async (): Promise<{ success: boolean; count: number }> => {
+  try {
+    const { doc, setDoc } = await import("firebase/firestore");
+    const seedData = (await import("./anchors_seed.json")).default as any[];
+    
+    let count = 0;
+    for (const anchor of seedData) {
+      const docRef = doc(db, "bus_anchors", anchor.id);
+      await setDoc(docRef, {
+        ...anchor,
+        verified: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      count++;
+    }
+    
+    return { success: true, count };
+  } catch (error) {
+    console.error("Error seeding anchors:", error);
+    return { success: false, count: 0 };
+  }
 };

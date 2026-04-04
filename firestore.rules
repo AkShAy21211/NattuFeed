@@ -3,67 +3,125 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper: Check if the user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Helper: Check if the user is the owner of the document
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.uid == 'YIk8fYx3n9Uwj4ygF4tnwVGFS8p2';
     }
 
     // 1. Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create, update: if isOwner(userId) || (
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin() || (
         isAuthenticated() && 
         request.resource.data.diff(resource.data != null ? resource.data : {}).affectedKeys().hasOnly(['karmaTotal', 'karmaWeekly'])
       );
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
-    // 2. Posts Collection
+    // 2. Verification Requests
+    match /verification_requests/{requestId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || (resource.data != null && resource.data.userId == request.auth.uid)
+      );
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin() || (
+        isAuthenticated() && resource.data != null && resource.data.userId == request.auth.uid
+      );
+    }
+
+    // Fallback for any legacy camelCase calls
+    match /verificationRequests/{requestId} {
+      allow read, write: if isAdmin() || (
+        isAuthenticated() && (
+          (resource == null || resource.data.userId == request.auth.uid) &&
+          (request.resource == null || request.resource.data.userId == request.auth.uid)
+        )
+      );
+    }
+
+    // 3. Posts Collection
     match /posts/{postId} {
-      allow read: if isAuthenticated();
+      allow read: if true; // Public read for Guest mode
       
       allow create: if isAuthenticated() &&
         request.resource.data.authorId == request.auth.uid &&
         request.resource.data.keys().hasAll(['authorId', 'lat', 'lng', 'headline', 'category']);
       
-      allow update: if isAuthenticated() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verifiedCount', 'flagCount', 'reactions', 'isHidden']) &&
-        resource.data.authorId == request.resource.data.authorId &&
-        (request.resource.data.isHidden == resource.data.isHidden || 
-         request.auth.uid == resource.data.authorId || 
-         request.auth.uid == 'PDSS7Le4eDZetKMw6fBaI5zDaer1');
+      allow update: if isAuthenticated() && (
+        // Admin can do anything
+        isAdmin() ||
+        // Post author can update resolution status, subType, urgencyLevel, reward, landmark
+        (
+          request.auth.uid == resource.data.authorId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'isResolved', 'resolvedAt', 'subType', 'urgencyLevel',
+            'contactMode', 'contactPhone', 'reward', 'landmark',
+            'headline', 'details', 'isHidden', 'createdAt'
+          ])
+        ) ||
+        // Community can update reactions/flags/verifications (not author-only fields)
+        (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'verifiedCount', 'flagCount', 'reactions', 'viewCount',
+            'anchorId', 'anchorName', 'lat', 'lng', 'expiresAt'
+          ]) &&
+          resource.data.authorId == request.resource.data.authorId &&
+          // Non-authors cannot toggle isHidden
+          request.resource.data.isHidden == resource.data.isHidden
+        )
+      );
         
-      allow delete: if isAuthenticated() && 
-        (request.auth.uid == resource.data.authorId || request.auth.uid == 'PDSS7Le4eDZetKMw6fBaI5zDaer1');
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.authorId || isAdmin());
     }
 
-    // 3. Verifications Collection
+    // 4. Verifications Collection
     match /verifications/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       // docId is {postId}_{userId}
       allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
       allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
       allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
     }
 
-    // 4. Flags Collection
+    // 5. Flags Collection
     match /flags/{docId} {
       allow read: if isAuthenticated();
+      // docId is {postId}_{userId}
       allow write: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
     }
 
-    // 5. Bus Anchors (Radar Stops)
+    // 6. Notifications Collection
+    match /notifications/{docId} {
+      allow read: if isAuthenticated() && resource.data.recipientId == request.auth.uid;
+      
+      allow create: if isAuthenticated() && 
+        request.resource.data.actorId == request.auth.uid &&
+        request.resource.data.recipientId != request.auth.uid &&
+        request.resource.data.read == false;
+      
+      allow update: if isAuthenticated() && 
+        resource.data.recipientId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+        
+      allow delete: if isAuthenticated() && resource.data.recipientId == request.auth.uid;
+    }
+
+    // 7. Bus Anchors (Radar Stops)
     match /bus_anchors/{anchorId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create: if isAuthenticated() && 
         request.resource.data.verified == false &&
         request.resource.data.suggestedBy == request.auth.uid;
-      // Updates and deletes are reserved for admins (manual verification)
-      allow update, delete: if isAuthenticated() && request.auth.uid == 'PDSS7Le4eDZetKMw6fBaI5zDaer1';
+      allow update, delete: if isAdmin();
     }
   }
 }

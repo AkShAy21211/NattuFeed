@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NattuFeed Viral Print Sheet v2</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    :root {
+      --primary: #1B4332;
+      --accent: #F59E0B;
+      --success: #25D366;
+    }
+
+    * { box-sizing: border-box; }
+    body { background: #f3f4f6; margin: 0; font-family: 'Inter', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    .wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 40px 20px;
+    }
+
+    .sheet {
+      width: 595px; /* Roughly A5/A4 half width for mockup */
+      background: #ffffff;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background: #fff;
+    }
+
+    /* CARD THEMES */
+    .theme-bus { --theme-bg: #1B4332; --theme-text: #fff; --theme-accent: #F59E0B; }
+    .theme-market { --theme-bg: #0369a1; --theme-text: #fff; --theme-accent: #7dd3fc; }
+    .theme-alert { --theme-bg: #9a3412; --theme-text: #fff; --theme-accent: #fbbf24; }
+    .theme-news { --theme-bg: #15803d; --theme-text: #fff; --theme-accent: #fcd34d; }
+
+    .card-header {
+      background: var(--theme-bg);
+      padding: 18px 18px 14px;
+      text-align: center;
+    }
+
+    .brand-row { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .brand { font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -0.5px; line-height: 1; margin-bottom: 4px; }
+    .brand span { color: var(--theme-accent); }
+    .brand-id { font-size: 9px; color: #cbd5e1; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.9; }
+
+    .hook-area {
+      padding: 16px;
+      text-align: center;
+      border-bottom: 1px dashed #f3f4f6;
+      flex: 1;
+    }
+
+    .headline-ml {
+      font-size: 24px;
+      font-weight: 900;
+      color: #111827;
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+
+    .headline-en {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.8;
+    }
+
+    .qr-container {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .qr-box {
+      display: inline-flex;
+      padding: 12px;
+      background: #fff;
+      border: 2px solid var(--theme-bg);
+      border-radius: 16px;
+      margin-bottom: 4px;
+    }
+
+    .cta-text {
+      font-size: 11px;
+      font-weight: 700;
+      color: #374151;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .no-app {
+      font-size: 8px;
+      font-weight: 800;
+      color: #166534;
+      background: #f0fdf4;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .card-footer {
+      background: #f9fafb;
+      padding: 8px;
+      text-align: center;
+      border-top: 1px solid #f3f4f6;
+    }
+
+    .footer-text {
+      font-size: 8px;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    .btn {
+      background: #1B4332;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(27,67,50,0.25);
+      transition: all 0.2s;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(27,67,50,0.3); }
+
+    .scissors {
+       font-size: 12px;
+       color: #9ca3af;
+       font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="sheet" id="sheet">
+    
+    <!-- CARD 1: BUS UPDATES -->
+    <div class="card theme-bus">
+      <div class="card-header">
+        <div class="brand-row">
+          <div class="brand">Nattu<span>Feed</span></div>
+          <div class="brand-id">നിങ്ങളുടെ നാട്ടിലെ വിവരങ്ങൾ</div>
+        </div>
+      </div>
+      <div class="hook-area">
+        <div class="headline-ml">ബസ് വിവരങ്ങൾ</div>
+        <div class="headline-en">Bus Radar</div>
+        <p style="font-size: 9px; color: #6b7280; margin-top: 8px; line-height: 1.4;">Real-time bus sightings shared by commuters in your area.</p>
+      </div>
+      <div class="qr-container">
+        <div class="no-app">Direct Browser Access</div>
+        <div id="qr1" class="qr-box"></div>
+        <div class="cta-text">Scan for Bus Updates</div>
+      </div>
+      <div class="card-footer">
+        <div class="footer-text">Community Verified · Kannur</div>
+      </div>
+    </div>
+
+    <!-- CARD 2: MARKET PRICES -->
+    <div class="card theme-market">
+      <div class="card-header">
+        <div class="brand-row">
+          <div class="brand">Nattu<span>Feed</span></div>
+          <div class="brand-id">നിങ്ങളുടെ നാട്ടിലെ വിവരങ്ങൾ</div>
+        </div>
+      </div>
+      <div class="hook-area">
+        <div class="headline-ml">വിലവിവരങ്ങൾ</div>
+        <div class="headline-en">Market Prices</div>
+        <p style="font-size: 9px; color: #6b7280; margin-top: 8px; line-height: 1.4;">Daily rates for fresh fish and local market produce.</p>
+      </div>
+      <div class="qr-container">
+        <div class="no-app">Fast & Lightweight</div>
+        <div id="qr2" class="qr-box"></div>
+        <div class="cta-text">Scan for Market Rates</div>
+      </div>
+      <div class="card-footer">
+        <div class="footer-text">Daily Updates from Local Bazaars</div>
+      </div>
+    </div>
+
+    <!-- CARD 3: ALERTS -->
+    <div class="card theme-alert">
+      <div class="card-header">
+        <div class="brand-row">
+          <div class="brand">Nattu<span>Feed</span></div>
+          <div class="brand-id">നിങ്ങളുടെ നാട്ടിലെ വിവരങ്ങൾ</div>
+        </div>
+      </div>
+      <div class="hook-area">
+        <div class="headline-ml">കറന്റ് കട്ട് & ട്രാഫിക്</div>
+        <div class="headline-en">Traffic & Power</div>
+        <p style="font-size: 9px; color: #6b7280; margin-top: 8px; line-height: 1.4;">Stay informed about power outages and road traffic near you.</p>
+      </div>
+      <div class="qr-container">
+        <div class="no-app">No App Download needed</div>
+        <div id="qr3" class="qr-box"></div>
+        <div class="cta-text">Scan for Local Alerts</div>
+      </div>
+      <div class="card-footer">
+        <div class="footer-text">Neighborhood Alerts and Notices</div>
+      </div>
+    </div>
+
+    <!-- CARD 4: GENERAL FEED -->
+    <div class="card theme-news">
+      <div class="card-header">
+        <div class="brand-row">
+          <div class="brand">Nattu<span>Feed</span></div>
+          <div class="brand-id">നിങ്ങളുടെ നാട്ടിലെ വിവരങ്ങൾ</div>
+        </div>
+      </div>
+      <div class="hook-area">
+        <div class="headline-ml">നാട്ടിലെ വിശേഷങ്ങൾ</div>
+        <div class="headline-en">Neighborhood Feed</div>
+        <p style="font-size: 9px; color: #6b7280; margin-top: 8px; line-height: 1.4;">Everything happening in your 2km radius in one place.</p>
+      </div>
+      <div class="qr-container">
+        <div class="no-app">Free & Open</div>
+        <div id="qr4" class="qr-box"></div>
+        <div class="cta-text">Scan to Open Feed</div>
+      </div>
+      <div class="card-footer">
+        <div class="footer-text">Connecting your local community</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="scissors">✂ Print A4 · Cut into 4 pieces · Place anywhere</div>
+  
+  <button class="btn" onclick="dl()">Download Print Sheet</button>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  const targetUrl = 'https://nattufeed-d59c9.web.app/';
+  
+  const qrConfigs = [
+    { id: 'qr1', color: '#1B4332' },
+    { id: 'qr2', color: '#0369a1' },
+    { id: 'qr3', color: '#9a3412' },
+    { id: 'qr4', color: '#15803d' }
+  ];
+
+  qrConfigs.forEach(cfg => {
+    new QRCode(document.getElementById(cfg.id), {
+      text: targetUrl,
+      width: 100, height: 100,
+      colorDark: cfg.color,
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  });
+
+  function dl() {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => {
+      html2canvas(document.getElementById('sheet'), {
+        scale: 4,
+        backgroundColor: '#ffffff',
+        useCORS: true
+      }).then(c => {
+        const a = document.createElement('a');
+        a.download = 'NattuFeed_Viral_Stickers_v2.png';
+        a.href = c.toDataURL('image/png');
+        a.click();
+      });
+    };
+    document.head.appendChild(s);
+  }
+</script>
+
+</body>
+</html>
